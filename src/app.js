@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,28 +53,33 @@ const ASSESSMENT_CATALOG_TEMPLATES = [
 ];
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WEB_ROOT = path.resolve(__dirname, '..', 'web');
+const WEB_SOURCE_ROOT = path.resolve(__dirname, '..', 'web');
+const WEB_DIST_ROOT = path.resolve(WEB_SOURCE_ROOT, 'dist');
+const WEB_ROOT = existsSync(WEB_DIST_ROOT) ? WEB_DIST_ROOT : WEB_SOURCE_ROOT;
 const STATIC_ROUTE_MAP = {
   '/': '/index.html',
-  '/landing': '/landing.html',
-  '/onboarding/consent': '/onboarding-consent.html',
-  '/onboarding/goals': '/onboarding-goals.html',
-  '/onboarding/upload': '/onboarding-upload.html',
-  '/onboarding/confirm': '/onboarding-confirm.html',
-  '/onboarding/quick-preferences': '/onboarding-quick-preferences.html',
-  '/onboarding/first-test': '/onboarding-first-test.html',
-  '/app/dashboard': '/app-dashboard.html',
-  '/app/dashboard/': '/app-dashboard.html',
-  '/app/blueprint': '/app-blueprint.html',
-  '/app/blueprint/': '/app-blueprint.html',
-  '/app/profile': '/app-profile.html',
-  '/app/profile/': '/app-profile.html',
-  '/app/assessments': '/app-assessments.html',
-  '/app/assessments/': '/app-assessments.html',
-  '/app/plan': '/app-plan.html',
-  '/app/plan/': '/app-plan.html',
-  '/auth/login': '/auth-login.html',
-  '/auth/login/': '/auth-login.html'
+  '/landing': '/index.html',
+  '/auth/login': '/index.html',
+  '/auth/login/': '/index.html',
+  '/onboarding/consent': '/index.html',
+  '/onboarding/goals': '/index.html',
+  '/onboarding/upload': '/index.html',
+  '/onboarding/confirm': '/index.html',
+  '/onboarding/quick-preferences': '/index.html',
+  '/onboarding/first-test': '/index.html',
+  '/app/dashboard': '/index.html',
+  '/app/dashboard/': '/index.html',
+  '/app/blueprint': '/index.html',
+  '/app/blueprint/': '/index.html',
+  '/app/profile': '/index.html',
+  '/app/profile/': '/index.html',
+  '/app/assessments': '/index.html',
+  '/app/assessments/': '/index.html',
+  '/app/plan': '/index.html',
+  '/app/plan/': '/index.html',
+  '/app/settings': '/index.html',
+  '/app/settings/': '/index.html',
+  '/admin': '/index.html'
 };
 const STATIC_MIME = {
   '.html': 'text/html; charset=utf-8',

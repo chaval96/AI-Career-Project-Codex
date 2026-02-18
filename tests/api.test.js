@@ -17,6 +17,15 @@ async function withServer(run) {
   }
 }
 
+async function assertSpaShell(baseUrl, route) {
+  const response = await fetch(`${baseUrl}${route}`);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('content-type'), 'text/html; charset=utf-8');
+  const html = await response.text();
+  assert.equal(html.includes('id="root"'), true);
+  assert.equal(html.includes('/src/main.tsx'), true);
+}
+
 test('auth and taxonomy routes work', async () => {
   await withServer(async (baseUrl) => {
     const healthResponse = await fetch(`${baseUrl}/health`);
@@ -42,26 +51,23 @@ test('auth and taxonomy routes work', async () => {
   });
 });
 
-test('web interface assets and navigation controls are served', async () => {
+test('web shell routes are served as SPA entry', async () => {
   await withServer(async (baseUrl) => {
-    const indexResponse = await fetch(`${baseUrl}/`);
-    assert.equal(indexResponse.status, 200);
-    assert.equal(indexResponse.headers.get('content-type'), 'text/html; charset=utf-8');
-
-    const indexHtml = await indexResponse.text();
-    assert.equal(indexHtml.includes('AI CAREER PATH OS'), true);
-    assert.equal(indexHtml.includes('id="btn-save-profile"'), true);
-    assert.equal(indexHtml.includes('data-section="plan"'), true);
-
-    const scriptResponse = await fetch(`${baseUrl}/assets/app.js`);
-    assert.equal(scriptResponse.status, 200);
-    assert.equal(scriptResponse.headers.get('content-type'), 'text/javascript; charset=utf-8');
-    const scriptText = await scriptResponse.text();
-    assert.equal(scriptText.includes('setActiveSection'), true);
-
-    const styleResponse = await fetch(`${baseUrl}/assets/styles.css`);
-    assert.equal(styleResponse.status, 200);
-    assert.equal(styleResponse.headers.get('content-type'), 'text/css; charset=utf-8');
+    await assertSpaShell(baseUrl, '/');
+    await assertSpaShell(baseUrl, '/landing');
+    await assertSpaShell(baseUrl, '/auth/login');
+    await assertSpaShell(baseUrl, '/onboarding/consent');
+    await assertSpaShell(baseUrl, '/onboarding/goals');
+    await assertSpaShell(baseUrl, '/onboarding/upload');
+    await assertSpaShell(baseUrl, '/onboarding/confirm');
+    await assertSpaShell(baseUrl, '/onboarding/quick-preferences');
+    await assertSpaShell(baseUrl, '/onboarding/first-test');
+    await assertSpaShell(baseUrl, '/app/dashboard');
+    await assertSpaShell(baseUrl, '/app/profile');
+    await assertSpaShell(baseUrl, '/app/assessments');
+    await assertSpaShell(baseUrl, '/app/blueprint');
+    await assertSpaShell(baseUrl, '/app/plan');
+    await assertSpaShell(baseUrl, '/app/settings');
 
     const headIndexResponse = await fetch(`${baseUrl}/`, { method: 'HEAD' });
     assert.equal(headIndexResponse.status, 200);
@@ -71,35 +77,14 @@ test('web interface assets and navigation controls are served', async () => {
 
 test('landing and login routes satisfy T-1001 flow requirements', async () => {
   await withServer(async (baseUrl) => {
-    const landingResponse = await fetch(`${baseUrl}/landing`);
-    assert.equal(landingResponse.status, 200);
-    assert.equal(landingResponse.headers.get('content-type'), 'text/html; charset=utf-8');
-    const landingHtml = await landingResponse.text();
-    assert.equal(landingHtml.includes('Get Started'), true);
-    assert.equal(landingHtml.includes('href="/auth/login"'), true);
-
-    const loginResponse = await fetch(`${baseUrl}/auth/login`);
-    assert.equal(loginResponse.status, 200);
-    assert.equal(loginResponse.headers.get('content-type'), 'text/html; charset=utf-8');
-    const loginHtml = await loginResponse.text();
-    assert.equal(loginHtml.includes('id="magic-link-form"'), true);
-    assert.equal(loginHtml.includes('State: idle'), true);
-
-    const loginScriptResponse = await fetch(`${baseUrl}/assets/auth-login.js`);
-    assert.equal(loginScriptResponse.status, 200);
-    const loginScript = await loginScriptResponse.text();
-    assert.equal(loginScript.includes("setState('idle'"), true);
-    assert.equal(loginScript.includes("setState('sent'"), true);
-    assert.equal(loginScript.includes("setState('error'"), true);
+    await assertSpaShell(baseUrl, '/landing');
+    await assertSpaShell(baseUrl, '/auth/login');
   });
 });
 
 test('consent route and API satisfy T-1002 requirements', async () => {
   await withServer(async (baseUrl) => {
-    const consentPageResponse = await fetch(`${baseUrl}/onboarding/consent`);
-    assert.equal(consentPageResponse.status, 200);
-    const consentPageHtml = await consentPageResponse.text();
-    assert.equal(consentPageHtml.includes('Profiling consent (required)'), true);
+    await assertSpaShell(baseUrl, '/onboarding/consent');
 
     const rejectResponse = await fetch(`${baseUrl}/v1/onboarding/consent`, {
       method: 'POST',
@@ -179,11 +164,7 @@ test('goals route and API satisfy T-1003 requirements', async () => {
       })
     });
 
-    const goalsPageResponse = await fetch(`${baseUrl}/onboarding/goals`);
-    assert.equal(goalsPageResponse.status, 200);
-    const goalsPageHtml = await goalsPageResponse.text();
-    assert.equal(goalsPageHtml.includes('Save and resume later'), true);
-    assert.equal(goalsPageHtml.includes('Why we ask this'), true);
+    await assertSpaShell(baseUrl, '/onboarding/goals');
 
     const invalidGoalsResponse = await fetch(`${baseUrl}/v1/onboarding/goals`, {
       method: 'POST',
@@ -254,17 +235,7 @@ test('upload route and API satisfy T-1004 requirements', async () => {
       })
     });
 
-    const uploadPageResponse = await fetch(`${baseUrl}/onboarding/upload`);
-    assert.equal(uploadPageResponse.status, 200);
-    const uploadPageHtml = await uploadPageResponse.text();
-    assert.equal(uploadPageHtml.includes('Provide at least one input method'), true);
-    assert.equal(uploadPageHtml.includes('Save and resume later'), true);
-
-    const uploadScriptResponse = await fetch(`${baseUrl}/assets/onboarding-upload.js`);
-    assert.equal(uploadScriptResponse.status, 200);
-    const uploadScript = await uploadScriptResponse.text();
-    assert.equal(uploadScript.includes("State: uploading"), true);
-    assert.equal(uploadScript.includes('Retry parse'), true);
+    await assertSpaShell(baseUrl, '/onboarding/upload');
 
     const invalidUploadResponse = await fetch(`${baseUrl}/v1/onboarding/upload`, {
       method: 'POST',
@@ -346,18 +317,7 @@ test('confirm route and API satisfy T-1005 requirements', async () => {
       })
     });
 
-    const confirmPageResponse = await fetch(`${baseUrl}/onboarding/confirm`);
-    assert.equal(confirmPageResponse.status, 200);
-    const confirmPageHtml = await confirmPageResponse.text();
-    assert.equal(confirmPageHtml.includes('Confirm extracted timeline'), true);
-    assert.equal(confirmPageHtml.includes('Save and resume later'), true);
-    assert.equal(confirmPageHtml.includes('Why we ask this'), true);
-
-    const confirmScriptResponse = await fetch(`${baseUrl}/assets/onboarding-confirm.js`);
-    assert.equal(confirmScriptResponse.status, 200);
-    const confirmScript = await confirmScriptResponse.text();
-    assert.equal(confirmScript.includes('Add at least one role entry before confirming.'), true);
-    assert.equal(confirmScript.includes('State: saved - confirmed'), true);
+    await assertSpaShell(baseUrl, '/onboarding/confirm');
 
     const invalidConfirmResponse = await fetch(`${baseUrl}/v1/onboarding/confirm`, {
       method: 'POST',
@@ -460,18 +420,7 @@ test('quick preferences route and API satisfy T-1006 requirements', async () => 
       })
     });
 
-    const pageResponse = await fetch(`${baseUrl}/onboarding/quick-preferences`);
-    assert.equal(pageResponse.status, 200);
-    const pageHtml = await pageResponse.text();
-    assert.equal(pageHtml.includes('Preference snapshot (60 seconds)'), true);
-    assert.equal(pageHtml.includes('Save and resume later'), true);
-    assert.equal(pageHtml.includes('Why we ask this'), true);
-
-    const scriptResponse = await fetch(`${baseUrl}/assets/onboarding-quick-preferences.js`);
-    assert.equal(scriptResponse.status, 200);
-    const script = await scriptResponse.text();
-    assert.equal(script.includes('onboarding_quick_preferences_draft_v1'), true);
-    assert.equal(script.includes('Next step: /onboarding/first-test'), true);
+    await assertSpaShell(baseUrl, '/onboarding/quick-preferences');
 
     const invalidResponse = await fetch(`${baseUrl}/v1/onboarding/quick-preferences`, {
       method: 'POST',
@@ -581,18 +530,7 @@ test('first test route and API satisfy T-1007 requirements', async () => {
       })
     });
 
-    const pageResponse = await fetch(`${baseUrl}/onboarding/first-test`);
-    assert.equal(pageResponse.status, 200);
-    const pageHtml = await pageResponse.text();
-    assert.equal(pageHtml.includes('Suggested test'), true);
-    assert.equal(pageHtml.includes('Start test'), true);
-    assert.equal(pageHtml.includes('Generate starter blueprint'), true);
-
-    const scriptResponse = await fetch(`${baseUrl}/assets/onboarding-first-calibration.js`);
-    assert.equal(scriptResponse.status, 200);
-    const script = await scriptResponse.text();
-    assert.equal(script.includes('/v1/onboarding/first-test/start'), true);
-    assert.equal(script.includes('/v1/onboarding/first-test/complete'), true);
+    await assertSpaShell(baseUrl, '/onboarding/first-test');
 
     const startResponse = await fetch(`${baseUrl}/v1/onboarding/first-test/start`, {
       method: 'POST',
@@ -643,23 +581,7 @@ test('first test route and API satisfy T-1007 requirements', async () => {
 
 test('dashboard route and API satisfy T-3001 baseline requirements', async () => {
   await withServer(async (baseUrl) => {
-    const pageResponse = await fetch(`${baseUrl}/app/dashboard`);
-    assert.equal(pageResponse.status, 200);
-    assert.equal(pageResponse.headers.get('content-type'), 'text/html; charset=utf-8');
-    const pageHtml = await pageResponse.text();
-    assert.equal(pageHtml.includes('Home / Overview'), true);
-    assert.equal(pageHtml.includes('id="next-action-cta"'), true);
-    assert.equal(pageHtml.includes('Weekly Check-In'), true);
-
-    const scriptResponse = await fetch(`${baseUrl}/assets/app-dashboard.js`);
-    assert.equal(scriptResponse.status, 200);
-    const scriptText = await scriptResponse.text();
-    assert.equal(scriptText.includes('/v1/dashboard'), true);
-    assert.equal(scriptText.includes('/v1/execution/checkin'), true);
-
-    const styleResponse = await fetch(`${baseUrl}/assets/app-shell.css`);
-    assert.equal(styleResponse.status, 200);
-    assert.equal(styleResponse.headers.get('content-type'), 'text/css; charset=utf-8');
+    await assertSpaShell(baseUrl, '/app/dashboard');
 
     const initialDashboardResponse = await fetch(`${baseUrl}/v1/dashboard`);
     assert.equal(initialDashboardResponse.status, 200);
@@ -771,18 +693,7 @@ test('dashboard route and API satisfy T-3001 baseline requirements', async () =>
 
 test('profile route and APIs satisfy T-3002 baseline requirements', async () => {
   await withServer(async (baseUrl) => {
-    const profilePageResponse = await fetch(`${baseUrl}/app/profile`);
-    assert.equal(profilePageResponse.status, 200);
-    const profilePageHtml = await profilePageResponse.text();
-    assert.equal(profilePageHtml.includes('Role Timeline'), true);
-    assert.equal(profilePageHtml.includes('Add Evidence'), true);
-    assert.equal(profilePageHtml.includes('Retake calibration'), true);
-
-    const profileScriptResponse = await fetch(`${baseUrl}/assets/app-profile.js`);
-    assert.equal(profileScriptResponse.status, 200);
-    const profileScript = await profileScriptResponse.text();
-    assert.equal(profileScript.includes('/v1/profile'), true);
-    assert.equal(profileScript.includes('/v1/profile/evidence'), true);
+    await assertSpaShell(baseUrl, '/app/profile');
 
     const profileResponse = await fetch(`${baseUrl}/v1/profile`);
     assert.equal(profileResponse.status, 200);
@@ -839,18 +750,7 @@ test('profile route and APIs satisfy T-3002 baseline requirements', async () => 
 
 test('plan route and APIs satisfy T-3003 baseline requirements', async () => {
   await withServer(async (baseUrl) => {
-    const planPageResponse = await fetch(`${baseUrl}/app/plan`);
-    assert.equal(planPageResponse.status, 200);
-    const planPageHtml = await planPageResponse.text();
-    assert.equal(planPageHtml.includes('Month Themes'), true);
-    assert.equal(planPageHtml.includes('Open weekly check-in'), true);
-    assert.equal(planPageHtml.includes('id="checkin-modal"'), true);
-
-    const planScriptResponse = await fetch(`${baseUrl}/assets/app-plan.js`);
-    assert.equal(planScriptResponse.status, 200);
-    const planScript = await planScriptResponse.text();
-    assert.equal(planScript.includes('/v1/plan'), true);
-    assert.equal(planScript.includes('/v1/execution/checkin'), true);
+    await assertSpaShell(baseUrl, '/app/plan');
 
     const initialPlanResponse = await fetch(`${baseUrl}/v1/plan`);
     assert.equal(initialPlanResponse.status, 200);
@@ -901,19 +801,7 @@ test('plan route and APIs satisfy T-3003 baseline requirements', async () => {
 
 test('assessments page route satisfies T-4001 baseline UI requirements', async () => {
   await withServer(async (baseUrl) => {
-    const pageResponse = await fetch(`${baseUrl}/app/assessments`);
-    assert.equal(pageResponse.status, 200);
-    const pageHtml = await pageResponse.text();
-    assert.equal(pageHtml.includes('Catalog'), true);
-    assert.equal(pageHtml.includes('Why we ask this'), true);
-    assert.equal(pageHtml.includes('Session Runner'), true);
-
-    const scriptResponse = await fetch(`${baseUrl}/assets/app-assessments.js`);
-    assert.equal(scriptResponse.status, 200);
-    const script = await scriptResponse.text();
-    assert.equal(script.includes('/v1/assessments/catalog'), true);
-    assert.equal(script.includes('/v1/assessments/start'), true);
-    assert.equal(script.includes('/v1/assessments/complete'), true);
+    await assertSpaShell(baseUrl, '/app/assessments');
   });
 });
 
@@ -1077,17 +965,7 @@ test('assessment catalog and status endpoints satisfy contract', async () => {
 
 test('blueprint and export flow works', async () => {
   await withServer(async (baseUrl) => {
-    const blueprintPageResponse = await fetch(`${baseUrl}/app/blueprint`);
-    assert.equal(blueprintPageResponse.status, 200);
-    const blueprintPageHtml = await blueprintPageResponse.text();
-    assert.equal(blueprintPageHtml.includes('Identity Report'), true);
-    assert.equal(blueprintPageHtml.includes('Private share link'), true);
-
-    const blueprintScriptResponse = await fetch(`${baseUrl}/assets/app-blueprint.js`);
-    assert.equal(blueprintScriptResponse.status, 200);
-    const blueprintScript = await blueprintScriptResponse.text();
-    assert.equal(blueprintScript.includes('/v1/blueprint/current'), true);
-    assert.equal(blueprintScript.includes('/v1/blueprint/'), true);
+    await assertSpaShell(baseUrl, '/app/blueprint');
 
     const generateResponse = await fetch(`${baseUrl}/v1/blueprint/generate`, {
       method: 'POST',

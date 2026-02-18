@@ -4,17 +4,27 @@
   "description": "Career Intelligence OS API scaffold",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "start": "npm run web:build && node src/server.js",
+    "dev:api": "node --watch src/server.js",
+    "dev:web": "npm --prefix web run dev",
+    "dev": "concurrently -k -n api,web -c green,cyan \"npm run dev:api\" \"npm run dev:web\"",
     "test": "node --test",
-    "start:postgres": "STORE_BACKEND=postgres node src/server.js",
+    "start:postgres": "npm run web:build && STORE_BACKEND=postgres node src/server.js",
+    "web:build": "npm --prefix web run build",
+    "web:test": "npm --prefix web run test",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f api db"
   },
   "dependencies": {
     "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=20"
