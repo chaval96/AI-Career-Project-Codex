@@ -1,0 +1,503 @@
+openapi: 3.0.3
+info:
+  title: Career Intelligence OS API
+  version: 0.1.0
+  description: |
+    API for Career Intelligence OS: profile ingestion, assessments, blueprint generation,
+    execution loop, and exports. All scoring outputs are evidence-traceable.
+
+servers:
+  - url: https://api.careerintel.example.com
+
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Taxonomy
+  - name: Assessments
+  - name: Blueprint
+  - name: Execution
+  - name: Exports
+
+paths:
+  /v1/auth/magic-link:
+    post:
+      tags: [Auth]
+      summary: Request a magic link login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "202":
+          description: Accepted
+
+  /v1/profile/resume:
+    post:
+      tags: [Profile]
+      summary: Upload and parse a resume/CV
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                locale:
+                  type: string
+                region:
+                  type: string
+      responses:
+        "200":
+          description: Parsed and normalized profile preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeParseResult"
+
+  /v1/profile/confirm:
+    post:
+      tags: [Profile]
+      summary: Confirm and persist extracted resume items
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resume_items]
+              properties:
+                resume_items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ResumeItem"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saved_count:
+                    type: integer
+
+  /v1/taxonomy/roles:
+    get:
+      tags: [Taxonomy]
+      summary: Search canonical roles (O*NET/ESCO mapped)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: locale
+          schema: { type: string }
+        - in: query
+          name: region
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: Matching roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CanonicalRole"
+
+  /v1/assessments/start:
+    post:
+      tags: [Assessments]
+      summary: Start an assessment session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assessment_type]
+              properties:
+                assessment_type:
+                  type: string
+                  enum: [micro_test, simulation, game, survey]
+                role_family:
+                  type: string
+                version:
+                  type: string
+      responses:
+        "200":
+          description: Assessment manifest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentSession"
+
+  /v1/assessments/events:
+    post:
+      tags: [Assessments]
+      summary: Ingest assessment event batches
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attempt_id, events]
+              properties:
+                attempt_id:
+                  type: string
+                  format: uuid
+                events:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AssessmentEvent"
+      responses:
+        "204":
+          description: Accepted
+
+  /v1/assessments/complete:
+    post:
+      tags: [Assessments]
+      summary: Complete an attempt and trigger scoring
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attempt_id]
+              properties:
+                attempt_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Score summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentResult"
+
+  /v1/blueprint/generate:
+    post:
+      tags: [Blueprint]
+      summary: Generate career blueprint scenarios and execution plan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlueprintGenerateRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blueprint_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [queued, running]
+
+  /v1/blueprint/{blueprint_id}:
+    get:
+      tags: [Blueprint]
+      summary: Fetch blueprint JSON
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: blueprint_id
+          required: true
+         schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Blueprint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blueprint"
+
+  /v1/blueprint/{blueprint_id}/pdf:
+    get:
+      tags: [Exports]
+      summary: Download blueprint PDF
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: blueprint_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /v1/execution/checkin:
+    post:
+      tags: [Execution]
+      summary: Weekly check-in; returns drift alerts and next missions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeeklyCheckinRequest"
+      responses:
+        "200":
+          description: Updated plan deltas and alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyCheckinResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ResumeParseResult:
+      type: object
+      properties:
+        extracted_items:
+          type: array
+          items: { $ref: "#/components/schemas/ResumeItem" }
+        mapping_notes:
+          type: array
+          items: { type: string }
+
+    ResumeItem:
+      type: object
+      required: [org, role_title, start_date]
+      properties:
+        org: { type: string }
+        role_title: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date, nullable: true }
+        industry: { type: string, nullable: true }
+        achievements: { type: string, nullable: true }
+        tools:
+          type: array
+          items: { type: string }
+        self_claimed_skills:
+          type: array
+          items: { type: string }
+        canonical_role_id: { type: string, nullable: true }
+        mapping_confidence: { type: number, minimum: 0, maximum: 1 }
+
+    CanonicalRole:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        taxonomy: { type: string, enum: [ONET, ESCO] }
+        version: { type: string }
+        score: { type: number }
+
+    AssessmentSession:
+      type: object
+      properties:
+        attempt_id: { type: string, format: uuid }
+        assessment_id: { type: string, format: uuid }
+        manifest:
+          type: object
+          additionalProperties: true
+
+    AssessmentEvent:
+      type: object
+      required: [t, name]
+      properties:
+        t:
+          type: number
+          description: Timestamp offset in milliseconds since start
+        name:
+          type: string
+          description: Event name (e.g., click, answer, decision)
+        data:
+          type: object
+          additionalProperties: true
+
+    AssessmentResult:
+      type: object
+      properties:
+        attempt_id: { type: string, format: uuid }
+        scores:
+          type: object
+          additionalProperties: true
+        reliability:
+          type: number
+          minimum: 0
+          maximum: 1
+        evidence_items_created:
+          type: integer
+
+    BlueprintGenerateRequest:
+      type: object
+      required: [region, scenarios]
+      properties:
+        region: { type: string, example: "UK-London" }
+        target_roles:
+          type: array
+          items: { type: string }
+        scenarios:
+          type: array
+          items:
+            type: string
+            enum: [safe, aggressive, pivot]
+        constraints:
+          type: object
+          additionalProperties: true
+
+    Blueprint:
+      type: object
+      properties:
+        blueprint_id: { type: string, format: uuid }
+        generated_at: { type: string, format: date-time }
+        identity_model:
+          type: object
+          properties:
+            cis:
+              $ref: "#/components/schemas/CISOutput"
+            evidence_coverage:
+              $ref: "#/components/schemas/EvidenceCoverage"
+        scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScenarioOutput"
+        execution_plan:
+          type: object
+          additionalProperties: true
+        explanation_artifact:
+          type: object
+          additionalProperties: true
+
+    CISOutput:
+      type: object
+      properties:
+        cis_mean: { type: number, minimum: 0, maximum: 100 }
+        cis_p50: { type: number, minimum: 0, maximum: 100 }
+        cis_p90: { type: number, minimum: 0, maximum: 100 }
+        drivers:
+          type: array
+          items: { type: string }
+        risks:
+          type: array
+          items: { type: string }
+
+    EvidenceCoverage:
+      type: object
+      properties:
+        measured_skills_pct: { type: number, minimum: 0, maximum: 1 }
+        inferred_skills_pct: { type: number, minimum: 0, maximum: 1 }
+        behavioral_pct: { type: number, minimum: 0, maximum: 1 }
+        motivation_pct: { type: number, minimum: 0, maximum: 1 }
+
+    ScenarioOutput:
+      type: object
+      properties:
+        name: { type: string, enum: [safe, aggressive, pivot] }
+        time_to_transition_months:
+          type: object
+          properties:
+            p10: { type: number }
+            p50: { type: number }
+            p90: { type: number }
+        earnings_3yr:
+          type: object
+          properties:
+            p10: { type: number }
+            p50: { type: number }
+            p90: { type: number }
+        plan:
+          type: object
+          additionalProperties: true
+        risks:
+          type: array
+          items: { type: string }
+
+    WeeklyCheckinRequest:
+      type: object
+      required: [week_index]
+      properties:
+        week_index: { type: integer, minimum: 1 }
+        time_spent_min: { type: integer, minimum: 0 }
+        blockers:
+          type: array
+          items: { type: string }
+        energy:
+          type: integer
+          minimum: 1
+          maximum: 10
+        completed_mission_ids:
+          type: array
+          items: { type: string, format: uuid }
+        evidence_links:
+          type: array
+          items: { type: string }
+
+    WeeklyCheckinResponse:
+      type: object
+      properties:
+        drift_alerts:
+          type: array
+          items: { type: string }
+        next_missions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionPreview"
+
+    MissionPreview:
+      type: object
+      properties:
+        mission_id: { type: string, format: uuid }
+        title: { type: string }
+        expected_time_min: { type: integer }
+        skill_targets:
+          type: array
+          items: { type: string }
