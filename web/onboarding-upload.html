@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Upload Experience</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-upload-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/onboarding/goals">Back</a>
+        <p class="brand">Step 3/6 - Upload Experience</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>Add your work history</h1>
+        <p>
+          Why we ask this: timeline quality directly impacts role-fit and transition forecasts.
+        </p>
+
+        <form id="upload-form" novalidate>
+          <div class="form-grid">
+            <label class="field field-span-2">
+              Upload CV (PDF/DOCX)
+              <input id="resume-file" type="file" accept=".pdf,.doc,.docx" />
+              <small class="why">Required or optional alternatives below.</small>
+            </label>
+
+            <label class="field field-span-2">
+              LinkedIn profile URL (optional)
+              <input id="linkedin-url" type="text" placeholder="https://linkedin.com/in/your-profile" />
+              <small class="why">Optional benefit: speeds extraction quality checks.</small>
+            </label>
+
+            <label class="field field-span-2">
+              Paste work history (optional)
+              <textarea id="pasted-history" rows="6" placeholder="Role, company, dates, achievements..."></textarea>
+              <small class="why">Optional benefit: fallback if you do not upload a file.</small>
+            </label>
+          </div>
+
+          <p class="hint">Provide at least one input method: file, LinkedIn URL, or pasted history.</p>
+
+          <ul id="upload-errors" class="error-list" hidden></ul>
+
+          <div class="entry-actions">
+            <button id="btn-parse-now" type="submit">Parse now</button>
+            <button id="btn-upload-save-later" type="button">Save and resume later</button>
+          </div>
+
+          <p id="upload-status" role="status" aria-live="polite">State: idle</p>
+        </form>
+
+        <section class="result-panel" id="parse-result" hidden>
+          <h3>Parsed preview</h3>
+          <ul id="parse-items"></ul>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-upload.js"></script>
+  </body>
+</html>

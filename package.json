@@ -8,8 +8,10 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test",
+    "start:postgres": "STORE_BACKEND=postgres node src/server.js",
     "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f api db"
   },
   "dependencies": {
     "pg": "^8.12.0"

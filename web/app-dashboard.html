@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Dashboard</title>
+    <link rel="stylesheet" href="/assets/app-shell.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell" data-dashboard-state="loading">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">CAREER INTEL OS</p>
+          <h1>Home / Overview</h1>
+        </div>
+        <div class="top-actions">
+          <span id="dashboard-freshness" class="pill">Loading...</span>
+          <a class="pill strong" href="/onboarding/first-test">Open Calibration</a>
+        </div>
+      </header>
+
+      <nav class="topnav">
+        <a class="active" href="/app/dashboard">Overview</a>
+        <a href="/app/blueprint">Blueprint</a>
+        <a href="/app/assessments">Assessments</a>
+        <a href="/app/plan">Plan</a>
+        <a href="/app/simulator">Simulator</a>
+        <a href="/app/market-intel">Market Intel</a>
+        <a href="/app/profile">Profile</a>
+        <a href="/app/settings">Settings</a>
+      </nav>
+
+      <div class="layout">
+        <aside class="leftnav">
+          <section class="side-card">
+            <h2>Progress</h2>
+            <p class="meta-label">Profile completeness</p>
+            <div class="meter"><div id="profile-progress" class="meter-fill"></div></div>
+            <p id="profile-progress-value" class="meta-value">0%</p>
+
+            <p class="meta-label">Evidence completeness</p>
+            <div class="meter"><div id="evidence-progress" class="meter-fill alt"></div></div>
+            <p id="evidence-progress-value" class="meta-value">0%</p>
+          </section>
+
+          <section class="side-card">
+            <h2>Confidence Meter</h2>
+            <div class="meter"><div id="confidence-meter" class="meter-fill"></div></div>
+            <p id="confidence-value" class="meta-value">0%</p>
+            <ul id="confidence-rationale" class="clean-list">
+              <li>Waiting for model confidence data.</li>
+            </ul>
+          </section>
+
+          <section class="side-card">
+            <h2>Notifications</h2>
+            <ul id="notifications-list" class="clean-list">
+              <li>Loading notifications...</li>
+            </ul>
+          </section>
+        </aside>
+
+        <section class="content">
+          <div class="grid">
+            <article class="card">
+              <h3>CIS Summary</h3>
+              <p id="cis-overall" class="hero-number">0</p>
+              <p id="cis-band" class="muted">p50 0 / p90 0</p>
+              <p id="top-cluster" class="muted">Top role cluster: not available</p>
+            </article>
+
+            <article class="card">
+              <h3>Evidence Coverage</h3>
+              <ul id="coverage-list" class="clean-list">
+                <li>Measured: 0%</li>
+                <li>Inferred: 0%</li>
+                <li>Behavioral: 0%</li>
+                <li>Motivation: 0%</li>
+              </ul>
+            </article>
+
+            <article class="card">
+              <h3>Next Best Action</h3>
+              <p id="next-action-type" class="muted">Waiting for recommendation...</p>
+              <a id="next-action-cta" class="cta" href="/onboarding/consent">Continue setup</a>
+            </article>
+
+            <article class="card">
+              <h3>Market Snapshot</h3>
+              <p id="market-roi" class="muted">ROI skill: n/a</p>
+              <ul id="market-opportunities" class="clean-list">
+                <li>No opportunities loaded yet.</li>
+              </ul>
+            </article>
+
+            <article class="card wide">
+              <h3>Drift Alerts</h3>
+              <ul id="drift-alerts" class="clean-list">
+                <li>No active drift alerts.</li>
+              </ul>
+            </article>
+
+            <article id="weekly-checkin" class="card wide">
+              <h3>Weekly Check-In</h3>
+              <form id="checkin-form">
+                <div class="checkin-grid">
+                  <label>
+                    Week index
+                    <input id="week-index" type="number" min="1" value="1" />
+                  </label>
+                  <label>
+                    Time spent (min)
+                    <input id="time-spent" type="number" min="0" value="120" />
+                  </label>
+                  <label>
+                    Energy (1-10)
+                    <input id="energy-level" type="number" min="1" max="10" value="6" />
+                  </label>
+                  <label class="span-3">
+                    Blockers (comma separated)
+                    <input id="blockers" type="text" value="" />
+                  </label>
+                </div>
+                <div class="row">
+                  <button type="submit">Submit check-in</button>
+                  <p id="checkin-status" class="muted">State: idle</p>
+                </div>
+              </form>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/assets/app-dashboard.js"></script>
+  </body>
+</html>

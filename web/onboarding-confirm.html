@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Confirm Extraction</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-confirm-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/onboarding/upload">Back</a>
+        <p class="brand">Step 4/6 - Confirm Extraction</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>Confirm extracted timeline</h1>
+        <p>
+          Why we ask this: corrected timeline details directly improve model accuracy and trust.
+        </p>
+
+        <form id="confirm-form" novalidate>
+          <div class="timeline-head">
+            <button id="btn-add-row" type="button">Add role</button>
+          </div>
+
+          <div id="timeline-container"></div>
+
+          <ul id="confirm-errors" class="error-list" hidden></ul>
+
+          <div class="entry-actions">
+            <button id="btn-confirm-save" type="submit">Confirm extraction</button>
+            <button id="btn-confirm-save-later" type="button">Save and resume later</button>
+          </div>
+
+          <p id="confirm-status" role="status" aria-live="polite">State: idle</p>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-confirm.js"></script>
+  </body>
+</html>

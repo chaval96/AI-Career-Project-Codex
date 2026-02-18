@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Quick Preferences</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-preferences-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/onboarding/confirm">Back</a>
+        <p class="brand">Step 5/6 - Quick Preferences</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>Preference snapshot (60 seconds)</h1>
+        <p>
+          Why we ask this: your baseline preferences improve scenario quality before full motivation mapping.
+        </p>
+
+        <form id="preferences-form" novalidate>
+          <label class="slider-field">
+            <span class="slider-label">Autonomy vs structure</span>
+            <input id="autonomy_vs_structure" type="range" min="0" max="100" value="50" />
+            <div class="slider-meta"><span>Structured</span><output id="autonomy_vs_structure_value">50</output><span>Autonomous</span></div>
+            <small class="why">Why we ask this: planning style affects execution recommendations.</small>
+          </label>
+
+          <label class="slider-field">
+            <span class="slider-label">Stability vs growth</span>
+            <input id="stability_vs_growth" type="range" min="0" max="100" value="50" />
+            <div class="slider-meta"><span>Stability</span><output id="stability_vs_growth_value">50</output><span>Growth</span></div>
+            <small class="why">Why we ask this: risk appetite shapes transition path pacing.</small>
+          </label>
+
+          <label class="slider-field">
+            <span class="slider-label">Income vs impact</span>
+            <input id="income_vs_impact" type="range" min="0" max="100" value="50" />
+            <div class="slider-meta"><span>Impact</span><output id="income_vs_impact_value">50</output><span>Income</span></div>
+            <small class="why">Why we ask this: priority weighting changes mission ranking.</small>
+          </label>
+
+          <label class="slider-field">
+            <span class="slider-label">Team vs solo</span>
+            <input id="team_vs_solo" type="range" min="0" max="100" value="50" />
+            <div class="slider-meta"><span>Team</span><output id="team_vs_solo_value">50</output><span>Solo</span></div>
+            <small class="why">Why we ask this: collaboration preference impacts role fit.</small>
+          </label>
+
+          <label class="slider-field">
+            <span class="slider-label">Hands-on vs strategic</span>
+            <input id="hands_on_vs_strategic" type="range" min="0" max="100" value="50" />
+            <div class="slider-meta"><span>Hands-on</span><output id="hands_on_vs_strategic_value">50</output><span>Strategic</span></div>
+            <small class="why">Why we ask this: task depth preference impacts pathway design.</small>
+          </label>
+
+          <ul id="preferences-errors" class="error-list" hidden></ul>
+
+          <div class="entry-actions">
+            <button id="btn-preferences-save" type="submit">Save and continue</button>
+            <button id="btn-preferences-save-later" type="button">Save and resume later</button>
+          </div>
+
+          <p id="preferences-status" role="status" aria-live="polite">State: idle</p>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-quick-preferences.js"></script>
+  </body>
+</html>

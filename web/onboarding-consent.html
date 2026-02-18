@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Consent</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-consent-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/auth/login">Back</a>
+        <p class="brand">Step 1/6 - Consent and Privacy</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>Your data, your control</h1>
+        <p>
+          We use resume, assessment, and preference data to model fit and generate your plan. You can
+          request export or deletion from settings.
+        </p>
+
+        <div class="info-grid">
+          <article class="info-box">
+            <h3>What we collect</h3>
+            <ul>
+              <li>Resume and profile timeline</li>
+              <li>Assessment and simulation signals</li>
+              <li>Preferences and weekly check-ins</li>
+            </ul>
+          </article>
+          <article class="info-box">
+            <h3>Why we collect it</h3>
+            <ul>
+              <li>Calibrate career identity and confidence</li>
+              <li>Generate scenarios and mission plans</li>
+              <li>Detect drift and keep recommendations current</li>
+            </ul>
+          </article>
+        </div>
+
+        <form id="consent-form" novalidate>
+          <label class="toggle-row">
+            <input id="toggle-profiling" type="checkbox" checked />
+            <span>
+              Profiling consent (required)
+              <small>This enables core model features and onboarding progression.</small>
+            </span>
+          </label>
+
+          <label class="toggle-row">
+            <input id="toggle-market" type="checkbox" />
+            <span>
+              Market data linking (optional)
+              <small>Improves role and salary opportunity matching.</small>
+            </span>
+          </label>
+
+          <label class="toggle-row">
+            <input id="toggle-research" type="checkbox" />
+            <span>
+              Research opt-in (optional)
+              <small>Lets us use anonymized signals to improve model quality.</small>
+            </span>
+          </label>
+
+          <div class="entry-actions">
+            <button id="btn-save-continue" type="submit">Save and continue</button>
+            <button id="btn-save-later" type="button">Save and resume later</button>
+          </div>
+
+          <p id="consent-status" role="status" aria-live="polite">State: idle</p>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-consent.js"></script>
+  </body>
+</html>

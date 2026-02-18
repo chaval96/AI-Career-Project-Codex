@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Profile</title>
+    <link rel="stylesheet" href="/assets/app-shell.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell" data-profile-state="loading">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">CAREER INTEL OS</p>
+          <h1>Profile</h1>
+        </div>
+        <div class="top-actions">
+          <span id="profile-freshness" class="pill">Loading...</span>
+        </div>
+      </header>
+
+      <nav class="topnav">
+        <a href="/app/dashboard">Overview</a>
+        <a href="/app/blueprint">Blueprint</a>
+        <a href="/app/assessments">Assessments</a>
+        <a href="/app/plan">Plan</a>
+        <a href="/app/simulator">Simulator</a>
+        <a href="/app/market-intel">Market Intel</a>
+        <a class="active" href="/app/profile">Profile</a>
+        <a href="/app/settings">Settings</a>
+      </nav>
+
+      <div class="layout">
+        <aside class="leftnav">
+          <section class="side-card">
+            <h2>Completion</h2>
+            <p class="meta-label">Profile</p>
+            <div class="meter"><div id="profile-meter" class="meter-fill"></div></div>
+            <p id="profile-meter-value" class="meta-value">0%</p>
+            <p class="meta-label">Evidence</p>
+            <div class="meter"><div id="evidence-meter" class="meter-fill alt"></div></div>
+            <p id="evidence-meter-value" class="meta-value">0%</p>
+          </section>
+          <section class="side-card">
+            <h2>Actions</h2>
+            <div class="entry-actions">
+              <a class="cta" href="/app/assessments">Retake calibration</a>
+            </div>
+            <p class="muted">Why we ask this: calibrated updates improve fit accuracy over time.</p>
+          </section>
+        </aside>
+
+        <section class="content">
+          <div class="tabs">
+            <button class="tab active" data-tab="timeline">Timeline</button>
+            <button class="tab" data-tab="skills">Skills</button>
+            <button class="tab" data-tab="motivation">Motivation</button>
+            <button class="tab" data-tab="artifacts">Artifacts</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-timeline">
+            <article class="card">
+              <h3>Role Timeline</h3>
+              <p class="muted">Why we ask this: transitions and complexity growth are core identity signals.</p>
+              <ul id="timeline-list" class="clean-list">
+                <li>No timeline entries yet.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="tab-panel" id="tab-skills" hidden>
+            <article class="card">
+              <h3>Skills Evidence</h3>
+              <p class="muted">Why we ask this: stronger evidence raises model confidence and recommendation precision.</p>
+              <ul id="evidence-list" class="clean-list">
+                <li>No evidence added yet.</li>
+              </ul>
+            </article>
+
+            <article class="card">
+              <h3>Add Evidence</h3>
+              <form id="evidence-form">
+                <div class="checkin-grid">
+                  <label>
+                    Source
+                    <select id="evidence-source">
+                      <option value="portfolio">Portfolio</option>
+                      <option value="cert">Certification</option>
+                      <option value="self_report">Self report</option>
+                      <option value="assessment">Assessment</option>
+                    </select>
+                  </label>
+                  <label>
+                    Skill ID
+                    <input id="evidence-skill-id" type="text" value="problem_solving" />
+                  </label>
+                  <label>
+                    Strength (0-1)
+                    <input id="evidence-strength" type="number" min="0" max="1" step="0.05" value="0.7" />
+                  </label>
+                  <label class="span-3">
+                    Metadata (optional JSON)
+                    <input id="evidence-metadata" type="text" value='{"link":"https://example.com"}' />
+                  </label>
+                </div>
+                <div class="row">
+                  <button type="submit">Add evidence</button>
+                  <p id="evidence-status" class="muted">State: idle</p>
+                </div>
+              </form>
+            </article>
+          </div>
+
+          <div class="tab-panel" id="tab-motivation" hidden>
+            <article class="card">
+              <h3>Motivation Snapshot</h3>
+              <p id="motivation-summary" class="muted">No motivation snapshot loaded yet.</p>
+            </article>
+          </div>
+
+          <div class="tab-panel" id="tab-artifacts" hidden>
+            <article class="card">
+              <h3>Artifacts</h3>
+              <p class="muted">Use Add Evidence to submit portfolio links, certificates, and project proof.</p>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/assets/app-profile.js"></script>
+  </body>
+</html>

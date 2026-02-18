@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - First Test</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-first-test-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/onboarding/quick-preferences">Back</a>
+        <p class="brand">Step 6/6 - First Calibration Test</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>First evidence micro-test</h1>
+        <p>
+          Why we ask this: this is not an exam, it is a calibration to improve plan quality and confidence.
+        </p>
+
+        <div class="info-box">
+          <h3>Suggested test</h3>
+          <p id="first-test-suggested-role">Loading suggestion...</p>
+          <small id="first-test-suggestion-rationale" class="why"></small>
+        </div>
+
+        <div class="progress-track" aria-label="First test progress">
+          <div id="first-test-progress-bar" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <p id="first-test-progress-text" class="hint">Progress: 0%</p>
+
+        <ul id="first-test-errors" class="error-list" hidden></ul>
+
+        <div class="entry-actions">
+          <button id="btn-first-test-start" type="button">Start test</button>
+          <button id="btn-first-test-record-event" type="button" disabled>Record next response</button>
+          <button id="btn-first-test-complete" type="button" disabled>Finish and view results</button>
+          <button id="btn-first-test-save-later" type="button">Save and resume later</button>
+        </div>
+
+        <p id="first-test-status" role="status" aria-live="polite">State: idle</p>
+
+        <section id="first-test-result" class="result-panel" hidden>
+          <h3>Results summary</h3>
+          <p id="first-test-result-score"></p>
+          <p id="first-test-result-reliability"></p>
+          <p id="first-test-result-next-action"></p>
+          <h4>Starter mini-plan</h4>
+          <ul id="first-test-mini-plan"></ul>
+          <a id="starter-blueprint-cta" class="cta" href="/app/dashboard">Generate starter blueprint</a>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-first-calibration.js"></script>
+  </body>
+</html>

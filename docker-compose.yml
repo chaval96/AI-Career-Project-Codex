@@ -4,15 +4,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: career_intel_os
-      POSTGRES_USER: career
-      POSTGRES_PASSWORD: career
+      POSTGRES_DB: ${POSTGRES_DB:-career_intel_os}
+      POSTGRES_USER: ${POSTGRES_USER:-career}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-career}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U career -d career_intel_os"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-career} -d ${POSTGRES_DB:-career_intel_os}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,9 +27,18 @@ services:
     environment:
       PORT: 3000
       STORE_BACKEND: postgres
-      DATABASE_URL: postgres://career:career@db:5432/career_intel_os
+      DATABASE_URL: postgres://${POSTGRES_USER:-career}:${POSTGRES_PASSWORD:-career}@db:5432/${POSTGRES_DB:-career_intel_os}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
 volumes:
   postgres_data:

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Assessments</title>
+    <link rel="stylesheet" href="/assets/app-shell.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell" data-assessments-state="loading">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">CAREER INTEL OS</p>
+          <h1>Assessments</h1>
+        </div>
+        <div class="top-actions">
+          <span id="assessments-freshness" class="pill">Loading...</span>
+        </div>
+      </header>
+
+      <nav class="topnav">
+        <a href="/app/dashboard">Overview</a>
+        <a href="/app/blueprint">Blueprint</a>
+        <a class="active" href="/app/assessments">Assessments</a>
+        <a href="/app/plan">Plan</a>
+        <a href="/app/simulator">Simulator</a>
+        <a href="/app/market-intel">Market Intel</a>
+        <a href="/app/profile">Profile</a>
+        <a href="/app/settings">Settings</a>
+      </nav>
+
+      <section class="content">
+        <article class="card">
+          <h3>Catalog</h3>
+          <p class="muted">Why we ask this: each instrument adds measured evidence and improves reliability.</p>
+          <div id="assessments-cards" class="card-grid">
+            <article class="mini-card">Loading assessment catalog...</article>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Session Runner</h3>
+          <p id="session-summary" class="muted">No active session.</p>
+          <div class="row">
+            <button id="start-micro-test" type="button">Start micro-test</button>
+            <button id="submit-micro-test" type="button" disabled>Complete session</button>
+          </div>
+          <p id="session-status" class="muted">State: idle</p>
+          <ul id="delta-summary" class="clean-list">
+            <li>What changed in your model will appear here after completion.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/app-assessments.js"></script>
+  </body>
+</html>

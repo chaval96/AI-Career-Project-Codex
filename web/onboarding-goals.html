@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Goals</title>
+    <link rel="stylesheet" href="/assets/entry.css" />
+  </head>
+  <body>
+    <main class="entry-shell" data-goals-state="idle">
+      <header class="entry-top">
+        <a class="ghost" href="/onboarding/consent">Back</a>
+        <p class="brand">Step 2/6 - Goals and Constraints</p>
+      </header>
+
+      <section class="entry-card">
+        <h1>Define your target and constraints (2 minutes)</h1>
+        <p>
+          We ask this to produce realistic scenarios and mission pacing, not generic advice.
+        </p>
+
+        <form id="goals-form" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              Goal type
+              <select id="goal-type" required>
+                <option value="promotion">Promotion</option>
+                <option value="switch_role">Switch role</option>
+                <option value="switch_industry">Switch industry</option>
+                <option value="freelancing">Start freelancing</option>
+                <option value="relocate">Relocate</option>
+              </select>
+              <small class="why">Why we ask this: the goal type changes role-cluster scoring.</small>
+            </label>
+
+            <label class="field">
+              Time horizon
+              <select id="time-horizon" required>
+                <option value="3">3 months</option>
+                <option value="6" selected>6 months</option>
+                <option value="12">12 months</option>
+              </select>
+              <small class="why">Why we ask this: horizon drives mission intensity and forecast ranges.</small>
+            </label>
+
+            <label class="field">
+              Time per week available (hours)
+              <input id="time-hours" type="number" min="1" step="0.5" value="6" required />
+              <small class="why">Why we ask this: determines achievable weekly plan size.</small>
+            </label>
+
+            <label class="field">
+              Location
+              <input id="location" type="text" value="US-NYC" required />
+              <small class="why">Why we ask this: market demand and salary vary by region.</small>
+            </label>
+
+            <label class="field">
+              Salary floor (optional)
+              <input id="salary-floor" type="number" min="0" step="1000" placeholder="e.g. 120000" />
+              <small class="why">Optional benefit: improves filtering of low-fit scenarios.</small>
+            </label>
+
+            <label class="field toggle-field">
+              <input id="relocation-ok" type="checkbox" checked />
+              <span>Willing to relocate</span>
+            </label>
+
+            <label class="field toggle-field">
+              <input id="remote-only" type="checkbox" />
+              <span>Remote only</span>
+            </label>
+          </div>
+
+          <ul id="goals-errors" class="error-list" hidden></ul>
+
+          <div class="entry-actions">
+            <button id="btn-goals-continue" type="submit">Continue</button>
+            <button id="btn-goals-save-later" type="button">Save and resume later</button>
+          </div>
+
+          <p id="goals-status" role="status" aria-live="polite">State: idle</p>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/onboarding-goals.js"></script>
+  </body>
+</html>

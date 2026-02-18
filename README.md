@@ -1,98 +1,80 @@
-# Career Intelligence OS
+# AI Career Path OS
 
-This repository contains a runnable **MVP API scaffold** for Career Intelligence OS plus product documentation.
+This repository contains the AI Career Path OS API + web app scaffold and product specifications.
 
-## What is included
-- Product and architecture docs in `/Users/utku/career-intel-os/docs`
-- A Node.js API server in `/Users/utku/career-intel-os/src` aligned with `/Users/utku/career-intel-os/docs/api_openapi.yaml`
-- Storage backends:
-  - `memory` (default)
-  - `postgres` (persistent)
-- Docker setup for API + Postgres in `/Users/utku/career-intel-os/docker-compose.yml`
-- Integration tests in `/Users/utku/career-intel-os/tests`
+## Runtime Baseline
 
-## Install
+### 1) Install
 
 ```bash
 npm install
 ```
 
-## Run (memory backend)
+### 2) Environment
+
+```bash
+cp .env.example .env
+```
+
+Key vars:
+- `PORT`
+- `STORE_BACKEND` (`memory` or `postgres`)
+- `DATABASE_URL`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`, `APP_PORT` (for Docker Compose)
+
+### 3) Run in memory mode (default)
 
 ```bash
 npm test
 npm start
 ```
 
-Server default: `http://localhost:3000`
+- App: `http://localhost:3000`
+- Health: `http://localhost:3000/health`
 
-Web interface: `http://localhost:3000/`
-
-Health check:
+### 4) Run with Postgres (local DB)
 
 ```bash
-curl http://localhost:3000/health
+STORE_BACKEND=postgres DATABASE_URL=postgres://career:career@localhost:5432/career_intel_os npm run start:postgres
 ```
 
-Example response:
-
-```json
-{
-  "status": "ok",
-  "service": "career-intel-os-api",
-  "store_backend": "memory",
-  "db_ready": true
-}
-```
-
-## Run (Postgres backend via Docker)
+### 5) Run with Postgres (Docker Compose)
 
 ```bash
 npm run docker:up
 ```
 
-This starts:
-- API: `http://localhost:3000`
-- Postgres: `localhost:5432`
+Services:
+- API: `http://localhost:${APP_PORT:-3000}`
+- Postgres: `localhost:${POSTGRES_PORT:-5432}`
 
-Stop containers:
+Useful commands:
 
 ```bash
+npm run docker:logs
 npm run docker:down
 ```
 
-## Run API against your own Postgres (without Docker)
+## CI Baseline
 
-```bash
-STORE_BACKEND=postgres DATABASE_URL=postgres://career:career@localhost:5432/career_intel_os npm start
-```
+GitHub Actions workflow:
+- File: `.github/workflows/ci.yml`
+- Triggers: push + pull request on `main`
+- Matrix: Node `20`, `22`
+- Steps: checkout, `npm install`, `npm test`
 
-## Implemented API routes
-- `POST /v1/auth/magic-link`
-- `POST /v1/profile/resume`
-- `POST /v1/profile/confirm`
-- `GET /v1/taxonomy/roles`
-- `POST /v1/assessments/start`
-- `POST /v1/assessments/events`
-- `POST /v1/assessments/complete`
-- `POST /v1/blueprint/generate`
-- `GET /v1/blueprint/{blueprint_id}`
-- `GET /v1/blueprint/{blueprint_id}/pdf`
-- `POST /v1/execution/checkin`
+If tests fail, CI fails the build.
 
-## Interface coverage
-- `/` serves the MVP web console with:
-  - navigation tabs (Overview, Profile, Assessments, Blueprint, Execution)
-  - action buttons wired to live API endpoints
-  - activity log showing request results and errors
-  - backend/DB readiness status from `/health`
+## Docs
 
-## Repository docs
-- `/Users/utku/career-intel-os/docs/whitepaper.md` — investor-grade white paper
-- `/Users/utku/career-intel-os/docs/prd.md` — product requirements (MVP + v1 scope)
-- `/Users/utku/career-intel-os/docs/data_dictionary.md` — schemas and conventions
-- `/Users/utku/career-intel-os/docs/api_openapi.yaml` — OpenAPI v3 backend contract
+- `/Users/utku/career-intel-os/docs/ux_spec.md`
+- `/Users/utku/career-intel-os/docs/architecture.md`
+- `/Users/utku/career-intel-os/docs/ops_spec.md`
+- `/Users/utku/career-intel-os/docs/implementation_backlog.md`
+- `/Users/utku/career-intel-os/docs/api_openapi.yaml`
+- `/Users/utku/career-intel-os/docs/data_dictionary.md`
 
 ## Notes
-- Postgres tables are created automatically on API startup when `STORE_BACKEND=postgres`.
-- Resume parsing and scoring are deterministic scaffold implementations for development.
+
+- Postgres schema bootstrap runs on API startup when `STORE_BACKEND=postgres`.
+- The app currently includes a user-facing AI Career Path flow scaffold (onboarding, assessment, scenarios, weekly plan).
