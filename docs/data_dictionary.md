@@ -380,6 +380,16 @@ Scope: MVP + defined v1 extensions from UX and architecture specs
 | rationale | jsonb | top drivers, sensitivities, caveats |
 | created_at | timestamptz | required |
 
+### 1.23 `notification_settings`
+
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK `users.id` |
+| weekly_checkin_reminders | bool | default true |
+| drift_alert_notifications | bool | default true |
+| created_at | timestamptz | required |
+
 ---
 
 ## 2. Optional Graph Model (Capability Graph)

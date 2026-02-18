@@ -22,23 +22,30 @@ Key vars:
 - `DATABASE_URL`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`, `APP_PORT` (for Docker Compose)
 
-### 3) Run in memory mode (default)
+### 3) Run fullstack dev mode (default)
 
 ```bash
 npm test
+npm run dev
+```
+
+- Frontend app: `http://localhost:5173`
+- API: `http://localhost:3000`
+- Health: `http://localhost:3000/health`
+
+### 4) Run production-style API serving built frontend
+
+```bash
 npm start
 ```
 
-- App: `http://localhost:3000`
-- Health: `http://localhost:3000/health`
-
-### 4) Run with Postgres (local DB)
+### 5) Run with Postgres (local DB)
 
 ```bash
 STORE_BACKEND=postgres DATABASE_URL=postgres://career:career@localhost:5432/career_intel_os npm run start:postgres
 ```
 
-### 5) Run with Postgres (Docker Compose)
+### 6) Run with Postgres (Docker Compose)
 
 ```bash
 npm run docker:up
@@ -77,4 +84,6 @@ If tests fail, CI fails the build.
 ## Notes
 
 - Postgres schema bootstrap runs on API startup when `STORE_BACKEND=postgres`.
-- The app currently includes a user-facing AI Career Path flow scaffold (onboarding, assessment, scenarios, weekly plan).
+- `LLM_ENABLED` defaults to `false`; deterministic scoring/scenario modules are used by default.
+- Taxonomy enrichment adapters are optional and fallback to local mappings when external keys are disabled.
+- Debug panels are disabled in user flow; optional diagnostics route is `/admin` only when `VITE_DEBUG_UI=true`.

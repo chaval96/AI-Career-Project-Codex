@@ -1017,6 +1017,66 @@ test('blueprint and export flow works', async () => {
   });
 });
 
+test('settings endpoints and compatibility aliases satisfy API sanity', async () => {
+  await withServer(async (baseUrl) => {
+    const initialSettingsResponse = await fetch(`${baseUrl}/v1/settings`);
+    assert.equal(initialSettingsResponse.status, 200);
+    const initialSettings = await initialSettingsResponse.json();
+    assert.equal(typeof initialSettings.consent_flags.profiling_accepted, 'boolean');
+    assert.equal(typeof initialSettings.notification_prefs.weekly_checkin_reminders, 'boolean');
+
+    const consentViaAliasResponse = await fetch(`${baseUrl}/consent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profiling_accepted: true,
+        market_data_linking_accepted: true,
+        research_opt_in: false
+      })
+    });
+    assert.equal(consentViaAliasResponse.status, 200);
+
+    const patchSettingsResponse = await fetch(`${baseUrl}/v1/settings/consents`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profiling_accepted: true,
+        market_data_linking_accepted: false,
+        research_opt_in: true
+      })
+    });
+    assert.equal(patchSettingsResponse.status, 200);
+    const patchedSettings = await patchSettingsResponse.json();
+    assert.equal(patchedSettings.consent_flags.market_data_linking_accepted, false);
+    assert.equal(patchedSettings.consent_flags.research_opt_in, true);
+
+    const exportResponse = await fetch(`${baseUrl}/v1/settings/export`, {
+      method: 'POST'
+    });
+    assert.equal(exportResponse.status, 202);
+    const exportPayload = await exportResponse.json();
+    assert.equal(typeof exportPayload.request_id, 'string');
+    assert.equal(exportPayload.status, 'queued');
+
+    const deleteResponse = await fetch(`${baseUrl}/v1/settings/delete-request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'Testing flow' })
+    });
+    assert.equal(deleteResponse.status, 202);
+    const deletePayload = await deleteResponse.json();
+    assert.equal(typeof deletePayload.request_id, 'string');
+    assert.equal(deletePayload.status, 'queued');
+    assert.equal(deletePayload.grace_period_days, 30);
+
+    const meResponse = await fetch(`${baseUrl}/me`);
+    assert.equal(meResponse.status, 200);
+    const mePayload = await meResponse.json();
+    assert.equal(typeof mePayload.onboarding.next_step, 'string');
+    assert.equal(typeof mePayload.model_summary.confidence_meter.value, 'number');
+  });
+});
+
 test('weekly checkin returns missions and drift alerts', async () => {
   await withServer(async (baseUrl) => {
     const checkinResponse = await fetch(`${baseUrl}/v1/execution/checkin`, {

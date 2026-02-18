@@ -1,99 +1,91 @@
-import { randomUUID } from 'node:crypto';
+import { computeCvSignals } from './cv_intelligence.js';
+import { buildExplanationArtifact } from './explanations.js';
+import { rankRoleClusters } from './market_seed.js';
+import { generateStarterMissions } from './mission_generator.js';
+import { buildScenarioForecasts } from './scenario_engine.js';
 
-const SCENARIO_RISK = {
-  safe: ["Risk of slower compensation growth", "Potential under-positioning for stretch roles"],
-  aggressive: ["Higher workload and burnout risk", "Greater downside if market cools"],
-  pivot: ["Longer transition runway", "Higher uncertainty in early outcomes"]
-};
-
-function createScenario(name, baseScore, weekMissions) {
-  const multiplier = name === 'aggressive' ? 1.15 : name === 'pivot' ? 1.05 : 1;
-  const timeMid = Math.max(3, Math.round((10 - baseScore / 15) * multiplier));
-  const earningsMid = Math.round(65000 + baseScore * 900 * multiplier);
-
-  return {
-    name,
-    time_to_transition_months: {
-      p10: Math.max(1, timeMid - 2),
-      p50: timeMid,
-      p90: timeMid + 3
-    },
-    earnings_3yr: {
-      p10: Math.max(40000, earningsMid - 20000),
-      p50: earningsMid,
-      p90: earningsMid + 30000
-    },
-    plan: {
-      mission_count: weekMissions.length,
-      first_missions: weekMissions.slice(0, 3)
-    },
-    risks: SCENARIO_RISK[name] ?? []
-  };
-}
-
-function buildMission(title, expectedTimeMin, skillTargets) {
-  return {
-    mission_id: randomUUID(),
-    title,
-    expected_time_min: expectedTimeMin,
-    skill_targets: skillTargets
-  };
+function normalizeScenarioNames(input) {
+  const fallback = ['safe', 'aggressive', 'pivot'];
+  if (!Array.isArray(input) || input.length === 0) {
+    return fallback;
+  }
+  return input.filter((name) => typeof name === 'string' && name.length > 0);
 }
 
 export function buildBlueprint(blueprintId, payload, generatedAt) {
-  const targetRoles = Array.isArray(payload.target_roles) ? payload.target_roles : [];
-  const scenarios = Array.isArray(payload.scenarios) ? payload.scenarios : ['safe'];
+  const targetRoles = Array.isArray(payload.target_roles) ? payload.target_roles : ['software_engineering'];
+  const scenarios = normalizeScenarioNames(payload.scenarios);
 
-  const baseScore = Math.min(92, 55 + targetRoles.length * 4 + payload.region.length % 11);
-  const measuredSkillsPct = Math.min(0.85, 0.35 + targetRoles.length * 0.1);
+  const cvSignals = computeCvSignals(Array.isArray(payload.resume_items) ? payload.resume_items : []);
+  const rankedClusters = rankRoleClusters(targetRoles, cvSignals.adaptability_index);
+  const topClusters = rankedClusters.slice(0, 3).map((item) => item.cluster);
+  const primaryMarket = rankedClusters[0]?.market ?? {
+    demand_index: 0.7,
+    salary_mid: 135000,
+    skill_premium: 0.55,
+    saturation: 0.45
+  };
 
-  const missionTemplates = [
-    buildMission('Run one targeted micro-test and review errors', 90, ['problem_solving']),
-    buildMission('Publish one portfolio artifact tied to target role', 120, ['communication', 'domain_depth']),
-    buildMission('Complete one role-aligned networking outreach', 45, ['market_alignment']),
-    buildMission('Close one documented skill gap with focused study', 100, ['skill_compounding'])
+  const baseScore = Math.round(
+    Math.min(
+      95,
+      46
+      + rankedClusters[0]?.score * 40
+      + cvSignals.career_velocity * 10
+      + cvSignals.role_complexity_growth * 8
+    )
+  );
+  const measuredSkillsPct = Number(Math.min(0.85, 0.28 + cvSignals.adaptability_index * 0.4).toFixed(2));
+  const inferredSkillsPct = Number(Math.max(0, 1 - measuredSkillsPct).toFixed(2));
+  const missions = generateStarterMissions(topClusters, payload?.constraints?.time_per_week_hours ?? 8);
+
+  const scenarioForecasts = buildScenarioForecasts(scenarios, baseScore, missions, primaryMarket.demand_index);
+  const drivers = [
+    'Evidence-weighted skill depth',
+    'Role adjacency strength',
+    'Career velocity and complexity growth',
+    'Weekly execution capacity',
+    'Regional demand and salary momentum'
+  ];
+  const risks = [
+    'Evidence coverage incomplete for some core skills',
+    'Market saturation varies by sub-specialization',
+    'Execution variance can widen transition timelines'
   ];
 
   return {
     blueprint_id: blueprintId,
     generated_at: generatedAt,
+    top_role_clusters: topClusters,
+    drivers,
+    risks,
     identity_model: {
       cis: {
         cis_mean: baseScore,
-        cis_p50: Math.max(0, baseScore - 2),
-        cis_p90: Math.min(100, baseScore + 6),
-        drivers: [
-          'Evidence-weighted skill depth',
-          'Role adjacency strength',
-          'Regional demand and salary momentum'
-        ],
-        risks: [
-          'Evidence coverage incomplete for some core skills',
-          'Market saturation varies by sub-specialization'
-        ]
+        cis_p50: Math.max(0, baseScore - 3),
+        cis_p90: Math.min(100, baseScore + 7),
+        drivers,
+        risks
       },
       evidence_coverage: {
         measured_skills_pct: measuredSkillsPct,
-        inferred_skills_pct: 1 - measuredSkillsPct,
-        behavioral_pct: 0.4,
-        motivation_pct: 0.7
+        inferred_skills_pct: inferredSkillsPct,
+        behavioral_pct: Number(Math.min(1, 0.2 + cvSignals.career_velocity * 0.5).toFixed(2)),
+        motivation_pct: 0.65
       }
     },
-    scenarios: scenarios.map((name) => createScenario(name, baseScore, missionTemplates)),
+    scenarios: scenarioForecasts,
     execution_plan: {
       horizon_weeks: 12,
-      missions: missionTemplates
+      missions
     },
-    explanation_artifact: {
-      assumptions: {
-        region: payload.region,
-        constraints: payload.constraints ?? {}
-      },
-      top_drivers: [
-        'Current evidence strength',
-        'Target role gap size',
-        'Weekly effort availability'
-      ]
-    }
+    next_three_actions: missions.slice(0, 3),
+    explanation_artifact: buildExplanationArtifact({
+      region: payload.region,
+      constraints: payload.constraints ?? {},
+      profileSignals: cvSignals,
+      marketSignals: primaryMarket,
+      topClusters
+    })
   };
 }

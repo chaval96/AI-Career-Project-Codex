@@ -9,7 +9,13 @@ export function createMemoryStore() {
     goals: null,
     upload: null,
     quickPreferences: null,
-    firstTest: null
+    firstTest: null,
+    notificationPrefs: {
+      weekly_checkin_reminders: true,
+      drift_alert_notifications: true
+    },
+    exportRequests: [],
+    deletionRequests: []
   };
 
   return {
@@ -91,6 +97,28 @@ export function createMemoryStore() {
     },
     async getConsent() {
       return data.consent;
+    },
+    async getSettings() {
+      return {
+        consent_flags: {
+          profiling_accepted: Boolean(data.consent?.profiling_accepted),
+          market_data_linking_accepted: Boolean(data.consent?.market_data_linking_accepted),
+          research_opt_in: Boolean(data.consent?.research_opt_in)
+        },
+        notification_prefs: { ...data.notificationPrefs }
+      };
+    },
+    async updateSettingsConsents(consent) {
+      data.consent = consent;
+      return this.getSettings();
+    },
+    async createDataExportRequest(request) {
+      data.exportRequests.push(request);
+      return request;
+    },
+    async createDeletionRequest(request) {
+      data.deletionRequests.push(request);
+      return request;
     },
     async saveGoals(goals) {
       data.goals = goals;

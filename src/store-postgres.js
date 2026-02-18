@@ -86,6 +86,27 @@ const SCHEMA_QUERIES = [
     payload jsonb NOT NULL,
     created_at timestamptz NOT NULL
   )
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS notification_settings (
+    id uuid PRIMARY KEY,
+    payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL
+  )
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS report_exports (
+    id uuid PRIMARY KEY,
+    payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL
+  )
+  `,
+  `
+  CREATE TABLE IF NOT EXISTS deletion_requests (
+    id uuid PRIMARY KEY,
+    payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL
+  )
   `
 ];
 
@@ -416,6 +437,59 @@ export async function createPostgresStore(options = {}) {
         consent_version: row.consent_version,
         saved_at: row.saved_at.toISOString()
       };
+    },
+    async getSettings() {
+      const consent = await this.getConsent();
+      const notificationsResult = await pool.query(
+        `
+        SELECT payload
+        FROM notification_settings
+        ORDER BY created_at DESC
+        LIMIT 1
+        `
+      );
+      const notificationPrefs = notificationsResult.rowCount > 0
+        ? notificationsResult.rows[0].payload
+        : {
+            weekly_checkin_reminders: true,
+            drift_alert_notifications: true
+          };
+
+      return {
+        consent_flags: {
+          profiling_accepted: Boolean(consent?.profiling_accepted),
+          market_data_linking_accepted: Boolean(consent?.market_data_linking_accepted),
+          research_opt_in: Boolean(consent?.research_opt_in)
+        },
+        notification_prefs: {
+          weekly_checkin_reminders: Boolean(notificationPrefs.weekly_checkin_reminders),
+          drift_alert_notifications: Boolean(notificationPrefs.drift_alert_notifications)
+        }
+      };
+    },
+    async updateSettingsConsents(consent) {
+      await this.saveConsent(consent);
+      return this.getSettings();
+    },
+    async createDataExportRequest(request) {
+      await pool.query(
+        `
+        INSERT INTO report_exports (id, payload, created_at)
+        VALUES ($1, $2::jsonb, $3)
+        `,
+        [request.request_id, JSON.stringify(request), request.created_at]
+      );
+      return request;
+    },
+    async createDeletionRequest(request) {
+      await pool.query(
+        `
+        INSERT INTO deletion_requests (id, payload, created_at)
+        VALUES ($1, $2::jsonb, $3)
+        `,
+        [request.request_id, JSON.stringify(request), request.requested_at]
+      );
+      return request;
     },
     async saveGoals(goals) {
       await pool.query(

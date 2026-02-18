@@ -5,9 +5,11 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { buildAssessmentResultFromAttempt } from './assessment_scoring.js';
 import { buildBlueprint } from './blueprint.js';
 import { createMinimalPdf } from './pdf.js';
 import { createMemoryStore } from './store.js';
+import { enrichResumeWithTaxonomy } from './taxonomy-adapter.js';
 
 const ASSESSMENT_TYPES = new Set(['micro_test', 'simulation', 'game', 'survey']);
 const ALLOWED_SCENARIOS = new Set(['safe', 'aggressive', 'pivot']);
@@ -85,6 +87,18 @@ const STATIC_MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8'
+};
+const ROUTE_ALIASES = {
+  '/consent': '/v1/onboarding/consent',
+  '/goals': '/v1/onboarding/goals',
+  '/resume/parse': '/v1/onboarding/upload',
+  '/resume/confirm': '/v1/onboarding/confirm',
+  '/preferences': '/v1/onboarding/quick-preferences',
+  '/assessments/start': '/v1/assessments/start',
+  '/assessments/complete': '/v1/assessments/complete',
+  '/blueprint/generate': '/v1/blueprint/generate',
+  '/checkins/weekly': '/v1/execution/checkin',
+  '/me': '/v1/me'
 };
 
 function httpError(statusCode, message) {
@@ -224,23 +238,23 @@ function isNonEmptyStringArray(value) {
 }
 
 function buildResumeParseResult() {
+  const extractedItems = enrichResumeWithTaxonomy([
+    {
+      org: 'Example Org',
+      role_title: 'Software Engineer',
+      start_date: '2022-01-01',
+      end_date: null,
+      location: 'US-NYC',
+      industry: 'Technology',
+      level: 'mid',
+      achievements: ['Delivered product features with measurable impact'],
+      tools: ['Node.js', 'PostgreSQL'],
+      self_claimed_skills: ['API Design', 'Testing']
+    }
+  ]);
+
   return {
-    extracted_items: [
-      {
-        org: 'Example Org',
-        role_title: 'Software Engineer',
-        start_date: '2022-01-01',
-        end_date: null,
-        location: 'US-NYC',
-        industry: 'Technology',
-        level: 'mid',
-        achievements: ['Delivered product features with measurable impact'],
-        tools: ['Node.js', 'PostgreSQL'],
-        self_claimed_skills: ['API Design', 'Testing'],
-        canonical_role_id: '15-1252.00',
-        mapping_confidence: 0.82
-      }
-    ],
+    extracted_items: extractedItems,
     mapping_notes: ['Initial extraction uses deterministic parser heuristics in scaffold mode.']
   };
 }
@@ -252,35 +266,6 @@ function parseMultipartTextField(rawText, fieldName) {
     return '';
   }
   return match[1].trim();
-}
-
-function scoreAttempt(events) {
-  const eventCount = events.length;
-  const overall = Math.min(1, 0.35 + eventCount * 0.03);
-
-  return {
-    overall: Number(overall.toFixed(2)),
-    subscores: {
-      reasoning: Number(Math.min(1, overall * 0.95).toFixed(2)),
-      debugging: Number(Math.min(1, overall * 1.02).toFixed(2)),
-      communication: Number(Math.max(0.2, overall * 0.88).toFixed(2))
-    }
-  };
-}
-
-function buildAssessmentResult(attempt) {
-  const scores = scoreAttempt(attempt.events);
-  const reliability = Number(Math.min(1, 0.6 + attempt.events.length * 0.02).toFixed(2));
-  return {
-    attempt_id: attempt.attempt_id,
-    scores,
-    reliability,
-    evidence_items_created: Math.max(1, Math.round(scores.overall * 4)),
-    model_delta_summary: [
-      `Reasoning signal ${scores.subscores.reasoning >= 0.6 ? 'improved' : 'needs more evidence'}.`,
-      `Communication signal ${scores.subscores.communication >= 0.55 ? 'stable' : 'uncertain'}.`
-    ]
-  };
 }
 
 function deriveFirstTestRecommendation(goals, quickPreferences) {
@@ -647,7 +632,8 @@ export function createApp(options = {}) {
   const server = http.createServer(async (req, res) => {
     const method = req.method ?? 'GET';
     const url = new URL(req.url ?? '/', 'http://localhost');
-    const pathname = url.pathname;
+    const rawPathname = url.pathname;
+    const pathname = ROUTE_ALIASES[rawPathname] ?? rawPathname;
 
     try {
       if (method === 'GET' && pathname === '/health') {
@@ -685,6 +671,34 @@ export function createApp(options = {}) {
           state.first_test_suggestion = deriveFirstTestRecommendation(state.goals, state.quick_preferences);
         }
         sendJson(res, 200, state);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/v1/me') {
+        const onboardingState = typeof store.getOnboardingState === 'function'
+          ? await store.getOnboardingState()
+          : {
+              completed_steps: [],
+              next_step: 'consent',
+              profile_completion_pct: 0,
+              evidence_completion_pct: 0
+            };
+        const latestBlueprint = typeof store.getLatestBlueprint === 'function'
+          ? await store.getLatestBlueprint()
+          : null;
+        const latestCheckin = typeof store.getLatestCheckin === 'function'
+          ? await store.getLatestCheckin()
+          : null;
+        const dashboard = buildDashboardPayload(onboardingState, latestBlueprint, latestCheckin, now());
+        sendJson(res, 200, {
+          onboarding: onboardingState,
+          model_summary: {
+            cis: dashboard.cis_summary,
+            confidence_meter: dashboard.confidence_meter,
+            evidence_coverage: dashboard.evidence_coverage,
+            next_best_action: dashboard.next_best_action
+          }
+        });
         return;
       }
 
@@ -1063,7 +1077,7 @@ export function createApp(options = {}) {
           throw httpError(404, 'Assessment attempt not found.');
         }
 
-        const assessmentResult = buildAssessmentResult(attempt);
+        const assessmentResult = buildAssessmentResultFromAttempt(attempt);
         const completedAt = now();
         await store.completeAttempt(attempt.attempt_id, assessmentResult, completedAt);
 
@@ -1283,11 +1297,11 @@ export function createApp(options = {}) {
           throw httpError(404, 'Assessment attempt not found.');
         }
         if (attempt.completed_at) {
-          sendJson(res, 200, attempt.result ?? buildAssessmentResult(attempt));
+          sendJson(res, 200, attempt.result ?? buildAssessmentResultFromAttempt(attempt));
           return;
         }
 
-        const result = buildAssessmentResult(attempt);
+        const result = buildAssessmentResultFromAttempt(attempt);
 
         await store.completeAttempt(attempt.attempt_id, result, now());
         sendJson(res, 200, result);
@@ -1453,8 +1467,112 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && pathname === '/v1/settings') {
+        if (typeof store.getSettings === 'function') {
+          const settings = await store.getSettings();
+          sendJson(res, 200, settings);
+          return;
+        }
+
+        const consent = typeof store.getConsent === 'function' ? await store.getConsent() : null;
+        sendJson(res, 200, {
+          consent_flags: {
+            profiling_accepted: Boolean(consent?.profiling_accepted),
+            market_data_linking_accepted: Boolean(consent?.market_data_linking_accepted),
+            research_opt_in: Boolean(consent?.research_opt_in)
+          },
+          notification_prefs: {
+            weekly_checkin_reminders: true,
+            drift_alert_notifications: true
+          }
+        });
+        return;
+      }
+
+      if (method === 'PATCH' && pathname === '/v1/settings/consents') {
+        const body = await parseJsonBody(req);
+        if (typeof body.profiling_accepted !== 'boolean') {
+          throw httpError(400, 'profiling_accepted must be a boolean.');
+        }
+        if (!body.profiling_accepted) {
+          throw httpError(400, 'Profiling consent is required for core features.');
+        }
+
+        const currentConsent = typeof store.getConsent === 'function' ? await store.getConsent() : null;
+        const consent = {
+          profiling_accepted: true,
+          market_data_linking_accepted: Boolean(body.market_data_linking_accepted),
+          research_opt_in: Boolean(body.research_opt_in),
+          consent_version: currentConsent?.consent_version ?? '1.0',
+          saved_at: now()
+        };
+
+        let settings;
+        if (typeof store.updateSettingsConsents === 'function') {
+          settings = await store.updateSettingsConsents(consent);
+        } else {
+          if (typeof store.saveConsent === 'function') {
+            await store.saveConsent(consent);
+          }
+          settings = {
+            consent_flags: {
+              profiling_accepted: consent.profiling_accepted,
+              market_data_linking_accepted: consent.market_data_linking_accepted,
+              research_opt_in: consent.research_opt_in
+            },
+            notification_prefs: {
+              weekly_checkin_reminders: true,
+              drift_alert_notifications: true
+            }
+          };
+        }
+
+        sendJson(res, 200, settings);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/v1/settings/export') {
+        const request = {
+          request_id: randomUUID(),
+          status: 'queued',
+          created_at: now()
+        };
+
+        if (typeof store.createDataExportRequest === 'function') {
+          await store.createDataExportRequest(request);
+        }
+
+        sendJson(res, 202, {
+          request_id: request.request_id,
+          status: request.status
+        });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/v1/settings/delete-request') {
+        const body = await parseJsonBody(req, true);
+        const request = {
+          request_id: randomUUID(),
+          status: 'queued',
+          grace_period_days: 30,
+          reason: hasNonEmptyString(body.reason) ? body.reason.trim() : null,
+          requested_at: now()
+        };
+
+        if (typeof store.createDeletionRequest === 'function') {
+          await store.createDeletionRequest(request);
+        }
+
+        sendJson(res, 202, {
+          request_id: request.request_id,
+          status: request.status,
+          grace_period_days: request.grace_period_days
+        });
+        return;
+      }
+
       if (method === 'GET' || method === 'HEAD') {
-        const wasServed = await serveStaticFile(pathname, res, { headOnly: method === 'HEAD' });
+        const wasServed = await serveStaticFile(rawPathname, res, { headOnly: method === 'HEAD' });
         if (wasServed) {
           return;
         }

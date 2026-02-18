@@ -408,6 +408,218 @@ paths:
               schema:
                 $ref: "#/components/schemas/FirstTestCompleteResponse"
 
+  /consent:
+    post:
+      tags: [Onboarding]
+      summary: Compatibility alias for onboarding consent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentRequest"
+      responses:
+        "200":
+          description: Consent saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentResponse"
+
+  /goals:
+    post:
+      tags: [Onboarding]
+      summary: Compatibility alias for onboarding goals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalsRequest"
+      responses:
+        "200":
+          description: Goals saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalsResponse"
+
+  /resume/parse:
+    post:
+      tags: [Onboarding]
+      summary: Compatibility alias for onboarding upload parse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_name:
+                  type: string
+                linkedin_url:
+                  type: string
+                  format: uri
+                pasted_history:
+                  type: string
+      responses:
+        "200":
+          description: Parsed and normalized preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeParseResult"
+
+  /resume/confirm:
+    post:
+      tags: [Onboarding]
+      summary: Compatibility alias for onboarding confirm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resume_items]
+              properties:
+                resume_items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ResumeItem"
+      responses:
+        "200":
+          description: Timeline confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saved_count:
+                    type: integer
+
+  /preferences:
+    post:
+      tags: [Onboarding]
+      summary: Compatibility alias for onboarding quick preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuickPreferencesRequest"
+      responses:
+        "200":
+          description: Preference snapshot saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuickPreferencesResponse"
+
+  /assessments/start:
+    post:
+      tags: [Assessments]
+      summary: Compatibility alias for assessment start
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assessment_type]
+              properties:
+                assessment_type:
+                  type: string
+                  enum: [micro_test, simulation, game, survey]
+                role_family:
+                  type: string
+                version:
+                  type: string
+      responses:
+        "200":
+          description: Assessment manifest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentSession"
+
+  /assessments/complete:
+    post:
+      tags: [Assessments]
+      summary: Compatibility alias for assessment complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attempt_id]
+              properties:
+                attempt_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Score summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentResult"
+
+  /blueprint/generate:
+    post:
+      tags: [Blueprint]
+      summary: Compatibility alias for blueprint generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlueprintGenerateRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blueprint_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [queued, running]
+
+  /checkins/weekly:
+    post:
+      tags: [Plan]
+      summary: Compatibility alias for weekly check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeeklyCheckinRequest"
+      responses:
+        "200":
+          description: Updated plan deltas and alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyCheckinResponse"
+
+  /me:
+    get:
+      tags: [Auth]
+      summary: Fetch onboarding status and model summary
+      responses:
+        "200":
+          description: User state and summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+
   /v1/dashboard:
     get:
       tags: [Dashboard]
@@ -984,6 +1196,27 @@ components:
         next_route:
           type: string
           nullable: true
+
+    MeResponse:
+      type: object
+      properties:
+        onboarding:
+          $ref: "#/components/schemas/OnboardingState"
+        model_summary:
+          type: object
+          properties:
+            cis:
+              type: object
+              additionalProperties: true
+            confidence_meter:
+              type: object
+              additionalProperties: true
+            evidence_coverage:
+              type: object
+              additionalProperties: true
+            next_best_action:
+              type: object
+              additionalProperties: true
 
     ConsentRequest:
       type: object
