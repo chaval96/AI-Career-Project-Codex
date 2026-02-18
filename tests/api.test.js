@@ -23,7 +23,9 @@ async function assertSpaShell(baseUrl, route) {
   assert.equal(response.headers.get('content-type'), 'text/html; charset=utf-8');
   const html = await response.text();
   assert.equal(html.includes('id="root"'), true);
-  assert.equal(html.includes('/src/main.tsx'), true);
+  const hasDevEntry = html.includes('/src/main.tsx');
+  const hasBuiltEntry = /\/assets\/index-[^"]+\.js/.test(html);
+  assert.equal(hasDevEntry || hasBuiltEntry, true);
 }
 
 test('auth and taxonomy routes work', async () => {

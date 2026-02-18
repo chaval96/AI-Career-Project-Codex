@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm --prefix web install && npm run web:build"
+
+[deploy]
+startCommand = "node src/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
