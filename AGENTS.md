@@ -43,3 +43,14 @@ For each MVP page route in `docs/ux_spec.md`, ensure:
 - Maintain observability hooks for funnel, reliability, and model quality metrics.
 - Do not ship changes that bypass consent, deletion, or export controls.
 - Keep outputs contestable: show why, report issue, request human review pathways.
+
+## Hard UX Gate (must pass before merge)
+- All routes listed in docs/ux_spec.md exist and render.
+- Onboarding is mandatory before /app/* routes.
+- Every primary CTA button:
+  1) validates required fields
+  2) saves state (API or local + sync)
+  3) navigates to next step on success
+  4) shows error + retry on failure
+- No user-facing logs/traces/debug panels appear unless DEBUG_UI=true and route is /admin.
+- Onboarding pages include: stepper + Save/Resume + “Why we ask this”.
