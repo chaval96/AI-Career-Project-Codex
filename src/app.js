@@ -64,6 +64,8 @@ const STATIC_ROUTE_MAP = {
   '/onboarding/first-test': '/onboarding-first-test.html',
   '/app/dashboard': '/app-dashboard.html',
   '/app/dashboard/': '/app-dashboard.html',
+  '/app/blueprint': '/app-blueprint.html',
+  '/app/blueprint/': '/app-blueprint.html',
   '/app/profile': '/app-profile.html',
   '/app/profile/': '/app-profile.html',
   '/app/assessments': '/app-assessments.html',
@@ -503,6 +505,36 @@ function buildProfilePayload(onboardingState, resumeItems, evidenceItems) {
     },
     timeline: resumeItems,
     evidence_items: evidenceItems
+  };
+}
+
+function normalizeBlueprintForView(blueprint) {
+  if (!blueprint) {
+    return null;
+  }
+
+  const cis = blueprint.identity_model?.cis ?? { cis_mean: 0, cis_p50: 0, cis_p90: 0 };
+  const evidenceCoverage = blueprint.identity_model?.evidence_coverage ?? {
+    measured_skills_pct: 0,
+    inferred_skills_pct: 0,
+    behavioral_pct: 0,
+    motivation_pct: 0
+  };
+  const drivers = blueprint.drivers ?? cis.drivers ?? [];
+  const risks = blueprint.risks ?? cis.risks ?? [];
+  const nextThreeActions = blueprint.next_three_actions
+    ?? blueprint.execution_plan?.missions?.slice(0, 3)
+    ?? [];
+
+  return {
+    ...blueprint,
+    drivers,
+    risks,
+    next_three_actions: nextThreeActions,
+    identity_model: {
+      cis,
+      evidence_coverage: evidenceCoverage
+    }
   };
 }
 
@@ -1220,6 +1252,17 @@ export function createApp(options = {}) {
         return;
       }
 
+      const profileEvidenceSkillMatch = pathname.match(/^\/v1\/profile\/evidence\/([^/]+)$/);
+      if (method === 'GET' && profileEvidenceSkillMatch) {
+        const skillId = decodeURIComponent(profileEvidenceSkillMatch[1]);
+        const evidenceItems = typeof store.listEvidenceItems === 'function'
+          ? await store.listEvidenceItems()
+          : [];
+        const items = evidenceItems.filter((item) => item.skill_id === skillId);
+        sendJson(res, 200, { items });
+        return;
+      }
+
       if (method === 'POST' && pathname === '/v1/blueprint/generate') {
         const body = await parseJsonBody(req);
 
@@ -1238,6 +1281,40 @@ export function createApp(options = {}) {
         await store.saveBlueprint(blueprint);
 
         sendJson(res, 202, { blueprint_id: blueprintId, status: 'queued' });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/v1/blueprint/current') {
+        const latestBlueprint = typeof store.getLatestBlueprint === 'function'
+          ? await store.getLatestBlueprint()
+          : null;
+        if (!latestBlueprint) {
+          throw httpError(404, 'No blueprint generated yet.');
+        }
+
+        sendJson(res, 200, normalizeBlueprintForView(latestBlueprint));
+        return;
+      }
+
+      const blueprintShareMatch = pathname.match(/^\/v1\/blueprint\/([0-9a-fA-F-]{36})\/share$/);
+      if (method === 'POST' && blueprintShareMatch) {
+        const blueprintId = blueprintShareMatch[1];
+        const blueprint = await store.getBlueprint(blueprintId);
+        if (!blueprint) {
+          throw httpError(404, 'Blueprint not found.');
+        }
+
+        const body = await parseJsonBody(req, true);
+        const expiresInHours = Number.isInteger(body.expires_in_hours) && body.expires_in_hours > 0
+          ? Math.min(168, body.expires_in_hours)
+          : 72;
+        const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+        const token = randomUUID().replace(/-/g, '');
+
+        sendJson(res, 201, {
+          url: `https://share.careerintel.example.com/blueprint/${blueprintId}?token=${token}`,
+          expires_at: expiresAt
+        });
         return;
       }
 
@@ -1267,7 +1344,7 @@ export function createApp(options = {}) {
           throw httpError(404, 'Blueprint not found.');
         }
 
-        sendJson(res, 200, blueprint);
+        sendJson(res, 200, normalizeBlueprintForView(blueprint));
         return;
       }
 

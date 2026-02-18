@@ -1015,6 +1015,18 @@ test('assessment catalog and status endpoints satisfy contract', async () => {
 
 test('blueprint and export flow works', async () => {
   await withServer(async (baseUrl) => {
+    const blueprintPageResponse = await fetch(`${baseUrl}/app/blueprint`);
+    assert.equal(blueprintPageResponse.status, 200);
+    const blueprintPageHtml = await blueprintPageResponse.text();
+    assert.equal(blueprintPageHtml.includes('Identity Report'), true);
+    assert.equal(blueprintPageHtml.includes('Private share link'), true);
+
+    const blueprintScriptResponse = await fetch(`${baseUrl}/assets/app-blueprint.js`);
+    assert.equal(blueprintScriptResponse.status, 200);
+    const blueprintScript = await blueprintScriptResponse.text();
+    assert.equal(blueprintScript.includes('/v1/blueprint/current'), true);
+    assert.equal(blueprintScript.includes('/v1/blueprint/'), true);
+
     const generateResponse = await fetch(`${baseUrl}/v1/blueprint/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1035,6 +1047,25 @@ test('blueprint and export flow works', async () => {
     const blueprintData = await blueprintResponse.json();
     assert.equal(blueprintData.blueprint_id, generateData.blueprint_id);
     assert.equal(Array.isArray(blueprintData.scenarios), true);
+    assert.equal(Array.isArray(blueprintData.drivers), true);
+    assert.equal(Array.isArray(blueprintData.risks), true);
+
+    const currentBlueprintResponse = await fetch(`${baseUrl}/v1/blueprint/current`);
+    assert.equal(currentBlueprintResponse.status, 200);
+    const currentBlueprint = await currentBlueprintResponse.json();
+    assert.equal(currentBlueprint.blueprint_id, generateData.blueprint_id);
+    assert.equal(Array.isArray(currentBlueprint.next_three_actions), true);
+
+    const shareResponse = await fetch(`${baseUrl}/v1/blueprint/${generateData.blueprint_id}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expires_in_hours: 48 })
+    });
+    assert.equal(shareResponse.status, 201);
+    const sharePayload = await shareResponse.json();
+    assert.equal(typeof sharePayload.url, 'string');
+    assert.equal(sharePayload.url.includes(generateData.blueprint_id), true);
+    assert.equal(typeof sharePayload.expires_at, 'string');
 
     const pdfResponse = await fetch(`${baseUrl}/v1/blueprint/${generateData.blueprint_id}/pdf`);
     assert.equal(pdfResponse.status, 200);

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Blueprint</title>
+    <link rel="stylesheet" href="/assets/app-shell.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell" data-blueprint-state="loading">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">CAREER INTEL OS</p>
+          <h1>Blueprint</h1>
+        </div>
+        <div class="top-actions">
+          <span id="blueprint-freshness" class="pill">Loading...</span>
+        </div>
+      </header>
+
+      <nav class="topnav">
+        <a href="/app/dashboard">Overview</a>
+        <a class="active" href="/app/blueprint">Blueprint</a>
+        <a href="/app/assessments">Assessments</a>
+        <a href="/app/plan">Plan</a>
+        <a href="/app/simulator">Simulator</a>
+        <a href="/app/market-intel">Market Intel</a>
+        <a href="/app/profile">Profile</a>
+        <a href="/app/settings">Settings</a>
+      </nav>
+
+      <section class="content">
+        <article class="card">
+          <h3>Identity Report</h3>
+          <div class="split-grid">
+            <div>
+              <p class="meta-label">CIS mean</p>
+              <p id="cis-mean" class="hero-number">0</p>
+              <p id="cis-band" class="muted">p50 0 / p90 0</p>
+            </div>
+            <div>
+              <p class="meta-label">Confidence meter</p>
+              <div class="meter"><div id="confidence-meter" class="meter-fill"></div></div>
+              <p id="confidence-value" class="meta-value">0%</p>
+            </div>
+          </div>
+          <p class="meta-label">Evidence coverage</p>
+          <ul id="evidence-coverage" class="clean-list">
+            <li>Measured: 0%</li>
+            <li>Inferred: 0%</li>
+            <li>Behavioral: 0%</li>
+            <li>Motivation: 0%</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Drivers and Risks</h3>
+          <div class="split-grid">
+            <div>
+              <p class="meta-label">Top 5 drivers</p>
+              <ul id="drivers-list" class="clean-list">
+                <li>No drivers available yet.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="meta-label">Top 3 risks</p>
+              <ul id="risks-list" class="clean-list">
+                <li>No risks available yet.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Scenario Cards</h3>
+          <div id="scenario-cards" class="card-grid">
+            <article class="mini-card">No scenarios loaded yet.</article>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Next 3 Actions</h3>
+          <ul id="next-actions" class="clean-list">
+            <li>No actions available yet.</li>
+          </ul>
+          <div class="row">
+            <button id="download-pdf" type="button">Download PDF</button>
+            <button id="create-share-link" type="button">Private share link</button>
+            <p id="share-status" class="muted">State: idle</p>
+          </div>
+          <p id="share-url" class="muted"></p>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/app-blueprint.js"></script>
+  </body>
+</html>
