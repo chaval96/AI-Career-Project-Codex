@@ -80,6 +80,11 @@ export function createMemoryStore() {
         (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
       )[0] ?? null;
     },
+    async listCheckins() {
+      return [...data.checkins].sort(
+        (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
+      );
+    },
     async saveConsent(consent) {
       data.consent = consent;
       return consent;

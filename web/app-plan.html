@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Career Path OS - Plan</title>
+    <link rel="stylesheet" href="/assets/app-shell.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell" data-plan-state="loading">
+      <header class="topbar">
+        <div>
+          <p class="brand-kicker">CAREER INTEL OS</p>
+          <h1>Plan</h1>
+        </div>
+        <div class="top-actions">
+          <button id="plan-retry" type="button" class="secondary" hidden>Retry load</button>
+          <span id="plan-freshness" class="pill">Loading...</span>
+        </div>
+      </header>
+
+      <nav class="topnav">
+        <a href="/app/dashboard">Overview</a>
+        <a href="/app/blueprint">Blueprint</a>
+        <a href="/app/assessments">Assessments</a>
+        <a class="active" href="/app/plan">Plan</a>
+        <a href="/app/simulator">Simulator</a>
+        <a href="/app/market-intel">Market Intel</a>
+        <a href="/app/profile">Profile</a>
+        <a href="/app/settings">Settings</a>
+      </nav>
+
+      <section class="content">
+        <article class="card">
+          <h3>Execution OS</h3>
+          <p class="muted">Why we ask this: weekly check-ins power drift detection and next mission recommendations.</p>
+          <div class="split-grid">
+            <div>
+              <p class="meta-label">Streak</p>
+              <p id="streak-days" class="hero-number">0</p>
+              <p class="muted">days</p>
+            </div>
+            <div>
+              <p class="meta-label">Plan progress</p>
+              <div class="meter"><div id="plan-progress" class="meter-fill"></div></div>
+              <p id="plan-progress-value" class="meta-value">0%</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Month Themes</h3>
+          <ul id="month-themes" class="clean-list">
+            <li>No month themes available yet.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Week Missions</h3>
+          <div id="missions-list" class="card-grid">
+            <article class="mini-card">No missions available yet.</article>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Mission Detail</h3>
+          <p id="mission-detail-title" class="meta-value">Select a mission</p>
+          <p id="mission-detail-time" class="muted"></p>
+          <p id="mission-detail-skills" class="muted"></p>
+          <p class="muted">Submit evidence links in weekly check-in to track completion.</p>
+        </article>
+
+        <article class="card">
+          <h3>Weekly Check-In</h3>
+          <p class="muted">Capture completed missions, time, energy, and blocker context to keep recommendations reliable.</p>
+          <div class="row">
+            <button id="open-checkin-modal" type="button">Open weekly check-in</button>
+            <p id="checkin-status" class="muted">State: idle</p>
+          </div>
+          <dialog id="checkin-modal" class="modal">
+            <form id="plan-checkin-form">
+              <h4>Weekly check-in</h4>
+              <p class="muted">Why we ask this: check-ins help detect drift and update next-best missions.</p>
+              <div class="checkin-grid">
+                <label>
+                  Week index
+                  <input id="checkin-week-index" type="number" min="1" value="1" required />
+                </label>
+                <label>
+                  Time spent (min)
+                  <input id="checkin-time-spent" type="number" min="0" value="120" required />
+                </label>
+                <label>
+                  Energy (1-10)
+                  <input id="checkin-energy" type="number" min="1" max="10" value="6" required />
+                </label>
+                <label class="span-3">
+                  Completed mission IDs (comma separated)
+                  <input id="checkin-completed-missions" type="text" />
+                </label>
+                <label class="span-3">
+                  Biggest blocker (comma separated)
+                  <input
+                    id="checkin-blockers"
+                    type="text"
+                    required
+                    placeholder="Example: interrupted focus time"
+                  />
+                </label>
+                <label class="span-3">
+                  Evidence links (comma separated)
+                  <input id="checkin-evidence-links" type="text" />
+                </label>
+              </div>
+              <div class="row">
+                <button type="submit">Submit check-in</button>
+                <button id="cancel-checkin-modal" type="button" class="secondary">Cancel</button>
+              </div>
+            </form>
+          </dialog>
+          <div class="split-grid">
+            <div>
+              <p class="meta-label">Drift alerts</p>
+              <ul id="drift-alerts" class="clean-list">
+                <li>No drift alerts yet.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="meta-label">Next missions</p>
+              <ul id="next-missions" class="clean-list">
+                <li>No next missions yet.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/app-plan.js"></script>
+  </body>
+</html>

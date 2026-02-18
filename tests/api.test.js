@@ -837,6 +837,68 @@ test('profile route and APIs satisfy T-3002 baseline requirements', async () => 
   });
 });
 
+test('plan route and APIs satisfy T-3003 baseline requirements', async () => {
+  await withServer(async (baseUrl) => {
+    const planPageResponse = await fetch(`${baseUrl}/app/plan`);
+    assert.equal(planPageResponse.status, 200);
+    const planPageHtml = await planPageResponse.text();
+    assert.equal(planPageHtml.includes('Month Themes'), true);
+    assert.equal(planPageHtml.includes('Open weekly check-in'), true);
+    assert.equal(planPageHtml.includes('id="checkin-modal"'), true);
+
+    const planScriptResponse = await fetch(`${baseUrl}/assets/app-plan.js`);
+    assert.equal(planScriptResponse.status, 200);
+    const planScript = await planScriptResponse.text();
+    assert.equal(planScript.includes('/v1/plan'), true);
+    assert.equal(planScript.includes('/v1/execution/checkin'), true);
+
+    const initialPlanResponse = await fetch(`${baseUrl}/v1/plan`);
+    assert.equal(initialPlanResponse.status, 200);
+    const initialPlan = await initialPlanResponse.json();
+    assert.equal(Array.isArray(initialPlan.month_themes), true);
+    assert.equal(Array.isArray(initialPlan.missions), true);
+    assert.equal(typeof initialPlan.streak_days, 'number');
+    assert.equal(typeof initialPlan.progress_pct, 'number');
+
+    const completedMissionId = initialPlan.missions[0]?.mission_id ?? null;
+    const checkinResponse = await fetch(`${baseUrl}/v1/execution/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        week_index: 1,
+        time_spent_min: 150,
+        energy: 6,
+        blockers: ['Unexpected dependency delay'],
+        completed_mission_ids: completedMissionId ? [completedMissionId] : []
+      })
+    });
+    assert.equal(checkinResponse.status, 200);
+    const checkinData = await checkinResponse.json();
+    assert.equal(Array.isArray(checkinData.drift_alerts), true);
+    assert.equal(Array.isArray(checkinData.next_missions), true);
+
+    const updatedPlanResponse = await fetch(`${baseUrl}/v1/plan`);
+    assert.equal(updatedPlanResponse.status, 200);
+    const updatedPlan = await updatedPlanResponse.json();
+    assert.equal(updatedPlan.streak_days >= 7, true);
+    if (completedMissionId) {
+      assert.equal(updatedPlan.progress_pct > 0, true);
+    }
+
+    const invalidCheckinResponse = await fetch(`${baseUrl}/v1/execution/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        week_index: 2,
+        time_spent_min: 100,
+        energy: 11,
+        blockers: ['Blocked']
+      })
+    });
+    assert.equal(invalidCheckinResponse.status, 400);
+  });
+});
+
 test('assessments page route satisfies T-4001 baseline UI requirements', async () => {
   await withServer(async (baseUrl) => {
     const pageResponse = await fetch(`${baseUrl}/app/assessments`);

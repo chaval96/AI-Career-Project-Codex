@@ -358,6 +358,17 @@ export async function createPostgresStore(options = {}) {
 
       return result.rows[0].payload;
     },
+    async listCheckins() {
+      const result = await pool.query(
+        `
+        SELECT payload
+        FROM checkins
+        ORDER BY created_at DESC
+        `
+      );
+
+      return result.rows.map((row) => row.payload);
+    },
     async saveConsent(consent) {
       await pool.query(
         `

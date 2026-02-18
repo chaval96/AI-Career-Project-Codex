@@ -70,6 +70,8 @@ const STATIC_ROUTE_MAP = {
   '/app/profile/': '/app-profile.html',
   '/app/assessments': '/app-assessments.html',
   '/app/assessments/': '/app-assessments.html',
+  '/app/plan': '/app-plan.html',
+  '/app/plan/': '/app-plan.html',
   '/auth/login': '/auth-login.html',
   '/auth/login/': '/auth-login.html'
 };
@@ -205,6 +207,14 @@ function validateQuickPreferencesPayload(body) {
 
 function hasNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isNonNegativeInteger(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function isNonEmptyStringArray(value) {
+  return Array.isArray(value) && value.every((item) => hasNonEmptyString(item));
 }
 
 function buildResumeParseResult() {
@@ -535,6 +545,44 @@ function normalizeBlueprintForView(blueprint) {
       cis,
       evidence_coverage: evidenceCoverage
     }
+  };
+}
+
+function buildPlanPayload(latestBlueprint, checkins, missions) {
+  const monthThemes = latestBlueprint?.scenarios?.slice(0, 3).map((scenario) => {
+    const name = scenario.name?.charAt(0)?.toUpperCase() + scenario.name?.slice(1);
+    return `${name} track focus`;
+  }) ?? ['Calibration and foundation', 'Skill proof and portfolio', 'Transition execution'];
+
+  const checkinsSorted = [...checkins].sort((a, b) => (b.week_index ?? 0) - (a.week_index ?? 0));
+  let streakWeeks = 0;
+  let expectedWeek = checkinsSorted[0]?.week_index ?? null;
+  for (const checkin of checkinsSorted) {
+    if (!Number.isInteger(checkin.week_index)) {
+      continue;
+    }
+    if (expectedWeek === null || checkin.week_index === expectedWeek) {
+      streakWeeks += 1;
+      expectedWeek = checkin.week_index - 1;
+      continue;
+    }
+    break;
+  }
+  const streakDays = streakWeeks * 7;
+
+  const completedMissionIds = new Set(
+    checkins.flatMap((checkin) => Array.isArray(checkin.completed_mission_ids) ? checkin.completed_mission_ids : [])
+  );
+  const missionCount = missions.length;
+  const progressPct = missionCount > 0
+    ? Math.min(100, Math.round((completedMissionIds.size / missionCount) * 100))
+    : Math.min(100, checkins.length * 8);
+
+  return {
+    month_themes: monthThemes,
+    missions,
+    streak_days: streakDays,
+    progress_pct: progressPct
   };
 }
 
@@ -1252,17 +1300,6 @@ export function createApp(options = {}) {
         return;
       }
 
-      const profileEvidenceSkillMatch = pathname.match(/^\/v1\/profile\/evidence\/([^/]+)$/);
-      if (method === 'GET' && profileEvidenceSkillMatch) {
-        const skillId = decodeURIComponent(profileEvidenceSkillMatch[1]);
-        const evidenceItems = typeof store.listEvidenceItems === 'function'
-          ? await store.listEvidenceItems()
-          : [];
-        const items = evidenceItems.filter((item) => item.skill_id === skillId);
-        sendJson(res, 200, { items });
-        return;
-      }
-
       if (method === 'POST' && pathname === '/v1/blueprint/generate') {
         const body = await parseJsonBody(req);
 
@@ -1348,11 +1385,45 @@ export function createApp(options = {}) {
         return;
       }
 
+      if (method === 'GET' && pathname === '/v1/plan') {
+        const latestBlueprintRaw = typeof store.getLatestBlueprint === 'function'
+          ? await store.getLatestBlueprint()
+          : null;
+        const latestBlueprint = normalizeBlueprintForView(latestBlueprintRaw);
+        const checkins = typeof store.listCheckins === 'function'
+          ? await store.listCheckins()
+          : [];
+        const missions = latestBlueprint?.execution_plan?.missions?.length
+          ? latestBlueprint.execution_plan.missions
+          : await selectMissionsForCheckin(store);
+
+        sendJson(res, 200, buildPlanPayload(latestBlueprint, checkins, missions));
+        return;
+      }
+
       if (method === 'POST' && pathname === '/v1/execution/checkin') {
         const body = await parseJsonBody(req);
 
         if (!Number.isInteger(body.week_index) || body.week_index < 1) {
           throw httpError(400, 'week_index must be an integer >= 1.');
+        }
+        if (body.time_spent_min !== undefined && !isNonNegativeInteger(body.time_spent_min)) {
+          throw httpError(400, 'time_spent_min must be an integer >= 0.');
+        }
+        if (
+          body.energy !== undefined
+          && (!Number.isInteger(body.energy) || body.energy < 1 || body.energy > 10)
+        ) {
+          throw httpError(400, 'energy must be an integer between 1 and 10.');
+        }
+        if (body.blockers !== undefined && !isNonEmptyStringArray(body.blockers)) {
+          throw httpError(400, 'blockers must be an array of non-empty strings.');
+        }
+        if (body.completed_mission_ids !== undefined && !isNonEmptyStringArray(body.completed_mission_ids)) {
+          throw httpError(400, 'completed_mission_ids must be an array of non-empty strings.');
+        }
+        if (body.evidence_links !== undefined && !isNonEmptyStringArray(body.evidence_links)) {
+          throw httpError(400, 'evidence_links must be an array of non-empty strings.');
         }
 
         const driftAlerts = [];
