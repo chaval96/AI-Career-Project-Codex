@@ -46,11 +46,16 @@ function sendNoContent(res) {
   res.end();
 }
 
-function sendBinary(res, statusCode, payload, contentType) {
+function sendBinary(res, statusCode, payload, contentType, headOnly = false) {
   res.writeHead(statusCode, {
     'Content-Type': contentType,
     'Content-Length': payload.length
   });
+  if (headOnly) {
+    res.end();
+    return;
+  }
+
   res.end(payload);
 }
 
@@ -132,7 +137,8 @@ async function selectMissionsForCheckin(store) {
   ];
 }
 
-async function serveStaticFile(pathname, res) {
+async function serveStaticFile(pathname, res, options = {}) {
+  const headOnly = options.headOnly ?? false;
   const target = pathname === '/' ? '/index.html' : pathname;
   if (target !== '/index.html' && !target.startsWith('/assets/')) {
     return false;
@@ -148,7 +154,7 @@ async function serveStaticFile(pathname, res) {
     const extension = path.extname(absolutePath);
     const contentType = STATIC_MIME[extension] ?? 'application/octet-stream';
     const payload = await readFile(absolutePath);
-    sendBinary(res, 200, payload, contentType);
+    sendBinary(res, 200, payload, contentType, headOnly);
     return true;
   } catch {
     return false;
@@ -425,8 +431,8 @@ export function createApp(options = {}) {
         return;
       }
 
-      if (method === 'GET') {
-        const wasServed = await serveStaticFile(pathname, res);
+      if (method === 'GET' || method === 'HEAD') {
+        const wasServed = await serveStaticFile(pathname, res, { headOnly: method === 'HEAD' });
         if (wasServed) {
           return;
         }

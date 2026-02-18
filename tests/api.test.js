@@ -61,6 +61,10 @@ test('web interface assets and navigation controls are served', async () => {
     const styleResponse = await fetch(`${baseUrl}/assets/styles.css`);
     assert.equal(styleResponse.status, 200);
     assert.equal(styleResponse.headers.get('content-type'), 'text/css; charset=utf-8');
+
+    const headIndexResponse = await fetch(`${baseUrl}/`, { method: 'HEAD' });
+    assert.equal(headIndexResponse.status, 200);
+    assert.equal(headIndexResponse.headers.get('content-type'), 'text/html; charset=utf-8');
   });
 });
 
