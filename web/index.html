@@ -3,118 +3,194 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Career Intelligence OS</title>
+    <title>AI Career Path OS</title>
     <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
-    <div class="bg-orb orb-a" aria-hidden="true"></div>
-    <div class="bg-orb orb-b" aria-hidden="true"></div>
-
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">Career Intelligence OS</p>
-        <h1>MVP Console</h1>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="tag">AI CAREER PATH OS</p>
+        <h1>Build your next 12-month career path with evidence, not guesswork.</h1>
+        <p class="lead">
+          Define goals, run skill checks, generate scenario forecasts, and track weekly execution.
+        </p>
       </div>
-      <div class="status-pill" id="backend-pill">Backend: checking...</div>
+      <div class="hero-meta">
+        <p class="pill" id="backend-pill">Platform: checking...</p>
+        <p class="pill is-soft" id="store-pill">Store: unknown</p>
+      </div>
     </header>
 
-    <nav class="tab-nav" aria-label="Primary">
-      <button class="tab-button is-active" data-section="overview">Overview</button>
-      <button class="tab-button" data-section="profile">Profile</button>
-      <button class="tab-button" data-section="assessments">Assessments</button>
-      <button class="tab-button" data-section="blueprint">Blueprint</button>
-      <button class="tab-button" data-section="execution">Execution</button>
+    <nav class="stepper" aria-label="Career Path Steps">
+      <button class="step is-active" data-section="onboarding">
+        <span class="step-index">1</span>
+        <span>Onboarding</span>
+      </button>
+      <button class="step" data-section="assessment">
+        <span class="step-index">2</span>
+        <span>Assessment</span>
+      </button>
+      <button class="step" data-section="scenarios">
+        <span class="step-index">3</span>
+        <span>Scenarios</span>
+      </button>
+      <button class="step" data-section="plan">
+        <span class="step-index">4</span>
+        <span>Action Plan</span>
+      </button>
     </nav>
 
     <main>
-      <section id="section-overview" class="panel is-visible">
-        <h2>System Overview</h2>
-        <div class="card-grid">
-          <article class="card">
-            <h3>Assessment Attempt</h3>
-            <p id="attempt-id">Not started</p>
-          </article>
-          <article class="card">
-            <h3>Blueprint</h3>
-            <p id="blueprint-id">Not generated</p>
-          </article>
-          <article class="card">
-            <h3>Store Backend</h3>
-            <p id="store-backend">Unknown</p>
-          </article>
-        </div>
-      </section>
+      <section id="section-onboarding" class="panel is-visible">
+        <h2>Career Direction Setup</h2>
+        <p class="section-copy">Start with your constraints and targets so the plan is realistic.</p>
 
-      <section id="section-profile" class="panel" hidden>
-        <h2>Profile Ingestion</h2>
-        <div class="actions">
-          <button id="btn-parse-resume">Parse Demo Resume</button>
-          <button id="btn-confirm-resume">Confirm Resume Item</button>
-        </div>
-        <label class="field">
-          Taxonomy role search
-          <div class="inline-inputs">
-            <input id="input-role-query" type="text" value="software" />
-            <button id="btn-search-roles">Search Roles</button>
-          </div>
-        </label>
-      </section>
-
-      <section id="section-assessments" class="panel" hidden>
-        <h2>Assessments</h2>
-        <div class="actions">
-          <button id="btn-start-assessment">Start Assessment</button>
-          <button id="btn-send-events">Send Demo Events</button>
-          <button id="btn-complete-assessment">Complete Assessment</button>
-        </div>
-      </section>
-
-      <section id="section-blueprint" class="panel" hidden>
-        <h2>Blueprint</h2>
-        <label class="field">
-          Region
-          <input id="input-region" type="text" value="US-NYC" />
-        </label>
-        <div class="checkbox-row">
-          <label><input type="checkbox" class="scenario" value="safe" checked /> Safe</label>
-          <label><input type="checkbox" class="scenario" value="aggressive" checked /> Aggressive</label>
-          <label><input type="checkbox" class="scenario" value="pivot" /> Pivot</label>
-        </div>
-        <div class="actions">
-          <button id="btn-generate-blueprint">Generate Blueprint</button>
-          <button id="btn-fetch-blueprint">Fetch Blueprint JSON</button>
-          <button id="btn-download-pdf">Open Blueprint PDF</button>
-        </div>
-      </section>
-
-      <section id="section-execution" class="panel" hidden>
-        <h2>Execution Check-in</h2>
-        <div class="checkin-grid">
+        <div class="form-grid">
           <label class="field">
-            Week Index
+            Current role
+            <input id="input-current-role" type="text" value="Software Engineer" />
+          </label>
+          <label class="field">
+            Target role
+            <input id="input-target-role" type="text" value="Senior Software Engineer" />
+          </label>
+          <label class="field">
+            Region
+            <input id="input-region" type="text" value="US-NYC" />
+          </label>
+          <label class="field">
+            Time per week (hours)
+            <input id="input-time-hours" type="number" min="1" value="6" />
+          </label>
+          <label class="field">
+            Salary floor (annual USD)
+            <input id="input-salary-floor" type="number" min="0" value="120000" />
+          </label>
+          <label class="field">
+            Role search keyword
+            <input id="input-role-query" type="text" value="software" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="btn-save-profile">Save Goals</button>
+          <button id="btn-run-resume-intake">Analyze Resume + Confirm</button>
+          <button id="btn-search-roles">Search Matching Roles</button>
+        </div>
+
+        <div class="snapshot" id="profile-summary">No profile saved yet.</div>
+      </section>
+
+      <section id="section-assessment" class="panel" hidden>
+        <h2>Skill Evidence Check</h2>
+        <p class="section-copy">Run a micro-assessment to calibrate your baseline and confidence score.</p>
+
+        <div class="quiz-grid">
+          <article class="quiz-card">
+            <h3>Problem Framing</h3>
+            <p>How confident are you in breaking down ambiguous technical problems?</p>
+            <select id="input-q1">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </article>
+          <article class="quiz-card">
+            <h3>Execution Speed</h3>
+            <p>How quickly can you ship a scoped feature with tests?</p>
+            <select id="input-q2">
+              <option value="slow">Slow</option>
+              <option value="steady" selected>Steady</option>
+              <option value="fast">Fast</option>
+            </select>
+          </article>
+          <article class="quiz-card">
+            <h3>Communication</h3>
+            <p>How strong is your technical communication in cross-functional teams?</p>
+            <select id="input-q3">
+              <option value="developing">Developing</option>
+              <option value="solid" selected>Solid</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </article>
+        </div>
+
+        <div class="actions">
+          <button id="btn-start-assessment">Start Micro-Assessment</button>
+          <button id="btn-submit-assessment">Submit Assessment</button>
+        </div>
+
+        <div class="snapshot" id="assessment-summary">Assessment not started.</div>
+      </section>
+
+      <section id="section-scenarios" class="panel" hidden>
+        <h2>Career Path Scenarios</h2>
+        <p class="section-copy">Generate safe, aggressive, and pivot paths with forecast ranges.</p>
+
+        <div class="checkbox-row">
+          <label><input type="checkbox" class="scenario" value="safe" checked /> Safe Path</label>
+          <label><input type="checkbox" class="scenario" value="aggressive" checked /> Aggressive Growth</label>
+          <label><input type="checkbox" class="scenario" value="pivot" /> Experimental Pivot</label>
+        </div>
+
+        <div class="actions">
+          <button id="btn-generate-blueprint">Generate Scenarios</button>
+          <button id="btn-load-blueprint">Load Scenario Details</button>
+          <button id="btn-open-report">Open PDF Report</button>
+        </div>
+
+        <div id="scenario-cards" class="scenario-grid">
+          <article class="empty">No scenarios loaded yet.</article>
+        </div>
+      </section>
+
+      <section id="section-plan" class="panel" hidden>
+        <h2>Weekly Action Plan</h2>
+        <p class="section-copy">Track weekly effort, blockers, and get updated mission guidance.</p>
+
+        <div class="form-grid">
+          <label class="field">
+            Week index
             <input id="input-week-index" type="number" min="1" value="1" />
           </label>
           <label class="field">
-            Time Spent (min)
+            Time spent (minutes)
             <input id="input-time-spent" type="number" min="0" value="90" />
           </label>
           <label class="field">
-            Energy (1-10)
+            Energy level (1-10)
             <input id="input-energy" type="number" min="1" max="10" value="5" />
           </label>
+          <label class="field field-span-2">
+            Current blockers (comma separated)
+            <input id="input-blockers" type="text" value="Lack of uninterrupted focus" />
+          </label>
         </div>
-        <label class="field">
-          Blockers (comma separated)
-          <input id="input-blockers" type="text" value="No uninterrupted time" />
-        </label>
+
         <div class="actions">
-          <button id="btn-submit-checkin">Submit Check-in</button>
+          <button id="btn-submit-checkin">Update Weekly Check-in</button>
+        </div>
+
+        <div class="results-grid">
+          <article class="result-block">
+            <h3>Drift Alerts</h3>
+            <ul id="alerts-list">
+              <li>No alerts yet.</li>
+            </ul>
+          </article>
+          <article class="result-block">
+            <h3>Next Missions</h3>
+            <ul id="missions-list">
+              <li>No missions generated yet.</li>
+            </ul>
+          </article>
         </div>
       </section>
 
-      <section class="panel log-panel is-visible" id="section-log">
-        <h2>Activity Log</h2>
-        <pre id="log-output">Initializing interface...</pre>
+      <section class="panel log-panel is-visible">
+        <h2>Activity Timeline</h2>
+        <pre id="log-output">Initializing AI Career Path interface...</pre>
       </section>
     </main>
 

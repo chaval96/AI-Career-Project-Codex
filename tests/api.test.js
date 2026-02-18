@@ -49,8 +49,9 @@ test('web interface assets and navigation controls are served', async () => {
     assert.equal(indexResponse.headers.get('content-type'), 'text/html; charset=utf-8');
 
     const indexHtml = await indexResponse.text();
-    assert.equal(indexHtml.includes('id="btn-start-assessment"'), true);
-    assert.equal(indexHtml.includes('data-section="execution"'), true);
+    assert.equal(indexHtml.includes('AI CAREER PATH OS'), true);
+    assert.equal(indexHtml.includes('id="btn-save-profile"'), true);
+    assert.equal(indexHtml.includes('data-section="plan"'), true);
 
     const scriptResponse = await fetch(`${baseUrl}/assets/app.js`);
     assert.equal(scriptResponse.status, 200);
