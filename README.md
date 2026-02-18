@@ -26,10 +26,23 @@ npm start
 
 Server default: `http://localhost:3000`
 
+Web interface: `http://localhost:3000/`
+
 Health check:
 
 ```bash
 curl http://localhost:3000/health
+```
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "service": "career-intel-os-api",
+  "store_backend": "memory",
+  "db_ready": true
+}
 ```
 
 ## Run (Postgres backend via Docker)
@@ -66,6 +79,13 @@ STORE_BACKEND=postgres DATABASE_URL=postgres://career:career@localhost:5432/care
 - `GET /v1/blueprint/{blueprint_id}`
 - `GET /v1/blueprint/{blueprint_id}/pdf`
 - `POST /v1/execution/checkin`
+
+## Interface coverage
+- `/` serves the MVP web console with:
+  - navigation tabs (Overview, Profile, Assessments, Blueprint, Execution)
+  - action buttons wired to live API endpoints
+  - activity log showing request results and errors
+  - backend/DB readiness status from `/health`
 
 ## Repository docs
 - `/Users/utku/career-intel-os/docs/whitepaper.md` — investor-grade white paper

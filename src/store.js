@@ -54,6 +54,9 @@ export function createMemoryStore() {
       data.checkins.push(checkin);
       return checkin;
     },
+    async ping() {
+      return true;
+    },
     async close() {}
   };
 }

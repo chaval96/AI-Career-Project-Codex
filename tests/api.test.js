@@ -19,6 +19,12 @@ async function withServer(run) {
 
 test('auth and taxonomy routes work', async () => {
   await withServer(async (baseUrl) => {
+    const healthResponse = await fetch(`${baseUrl}/health`);
+    assert.equal(healthResponse.status, 200);
+    const healthData = await healthResponse.json();
+    assert.equal(healthData.store_backend, 'memory');
+    assert.equal(healthData.db_ready, true);
+
     const authResponse = await fetch(`${baseUrl}/v1/auth/magic-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,6 +39,60 @@ test('auth and taxonomy routes work', async () => {
     const taxonomyData = await taxonomyResponse.json();
     assert.equal(Array.isArray(taxonomyData.roles), true);
     assert.equal(taxonomyData.roles.length > 0, true);
+  });
+});
+
+test('web interface assets and navigation controls are served', async () => {
+  await withServer(async (baseUrl) => {
+    const indexResponse = await fetch(`${baseUrl}/`);
+    assert.equal(indexResponse.status, 200);
+    assert.equal(indexResponse.headers.get('content-type'), 'text/html; charset=utf-8');
+
+    const indexHtml = await indexResponse.text();
+    assert.equal(indexHtml.includes('id="btn-start-assessment"'), true);
+    assert.equal(indexHtml.includes('data-section="execution"'), true);
+
+    const scriptResponse = await fetch(`${baseUrl}/assets/app.js`);
+    assert.equal(scriptResponse.status, 200);
+    assert.equal(scriptResponse.headers.get('content-type'), 'text/javascript; charset=utf-8');
+    const scriptText = await scriptResponse.text();
+    assert.equal(scriptText.includes('setActiveSection'), true);
+
+    const styleResponse = await fetch(`${baseUrl}/assets/styles.css`);
+    assert.equal(styleResponse.status, 200);
+    assert.equal(styleResponse.headers.get('content-type'), 'text/css; charset=utf-8');
+  });
+});
+
+test('profile ingestion parse and confirm work', async () => {
+  await withServer(async (baseUrl) => {
+    const parseResponse = await fetch(`${baseUrl}/v1/profile/resume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: 'en-US' })
+    });
+    assert.equal(parseResponse.status, 200);
+    const parseData = await parseResponse.json();
+    assert.equal(Array.isArray(parseData.extracted_items), true);
+    assert.equal(parseData.extracted_items.length > 0, true);
+
+    const confirmResponse = await fetch(`${baseUrl}/v1/profile/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resume_items: [
+          {
+            org: 'Example Org',
+            role_title: 'Software Engineer',
+            start_date: '2023-01-01',
+            end_date: null
+          }
+        ]
+      })
+    });
+    assert.equal(confirmResponse.status, 200);
+    const confirmData = await confirmResponse.json();
+    assert.equal(confirmData.saved_count, 1);
   });
 });
 

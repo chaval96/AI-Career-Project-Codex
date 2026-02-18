@@ -1,0 +1,271 @@
+:root {
+  --bg: #f2efe8;
+  --panel: #ffffff;
+  --ink: #1e2b34;
+  --muted: #5f707d;
+  --accent: #0f8b8d;
+  --accent-2: #f18f01;
+  --border: #d8d2c8;
+  --shadow: 0 14px 45px rgba(24, 40, 44, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Manrope', 'Avenir Next', sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 20% 10%, #fff6df 0, transparent 42%),
+    radial-gradient(circle at 90% 0, #dcf2f1 0, transparent 35%),
+    var(--bg);
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.bg-orb {
+  position: fixed;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  filter: blur(30px);
+  pointer-events: none;
+  opacity: 0.25;
+  z-index: 0;
+}
+
+.orb-a {
+  background: #0f8b8d;
+  top: -120px;
+  right: -90px;
+}
+
+.orb-b {
+  background: #f18f01;
+  bottom: -120px;
+  left: -90px;
+}
+
+.app-header,
+.tab-nav,
+main {
+  position: relative;
+  z-index: 1;
+}
+
+.app-header {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 6px 0 0;
+  font-size: 36px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 22px;
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.status-pill {
+  background: var(--ink);
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tab-button {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.tab-button:hover {
+  transform: translateY(-1px);
+}
+
+.tab-button.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 16px;
+  animation: rise 220ms ease;
+}
+
+.panel.is-visible {
+  display: block;
+}
+
+.log-panel {
+  display: block;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  background: linear-gradient(130deg, #ffffff, #f7fbff);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+button {
+  border: 0;
+  background: linear-gradient(120deg, var(--accent), #1ea3a6);
+  color: #fff;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 139, 141, 0.25);
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.field {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+input[type='text'],
+input[type='number'] {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.inline-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.inline-inputs input {
+  flex: 1;
+  margin-top: 0;
+}
+
+.checkbox-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.checkbox-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.checkin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+pre {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: #102228;
+  color: #c8f6f6;
+  border: 1px solid #2f4e55;
+  min-height: 150px;
+  max-height: 300px;
+  overflow: auto;
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 14px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inline-inputs {
+    flex-direction: column;
+  }
+}

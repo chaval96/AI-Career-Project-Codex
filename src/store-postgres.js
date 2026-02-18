@@ -64,7 +64,14 @@ async function initializeSchema(pool) {
 }
 
 export async function createPostgresStore(options = {}) {
-  const { Pool } = await import('pg');
+  let Pool;
+  try {
+    ({ Pool } = await import('pg'));
+  } catch (error) {
+    throw new Error(
+      'Postgres backend requires the "pg" package. Run "npm install" before using STORE_BACKEND=postgres.'
+    );
+  }
 
   const connectionString = options.connectionString ?? process.env.DATABASE_URL;
   if (!connectionString) {
@@ -224,6 +231,14 @@ export async function createPostgresStore(options = {}) {
       );
 
       return checkin;
+    },
+    async ping() {
+      try {
+        await pool.query('SELECT 1');
+        return true;
+      } catch {
+        return false;
+      }
     },
     async close() {
       await pool.end();

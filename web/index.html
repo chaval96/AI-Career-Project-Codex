@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Intelligence OS</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-a" aria-hidden="true"></div>
+    <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Career Intelligence OS</p>
+        <h1>MVP Console</h1>
+      </div>
+      <div class="status-pill" id="backend-pill">Backend: checking...</div>
+    </header>
+
+    <nav class="tab-nav" aria-label="Primary">
+      <button class="tab-button is-active" data-section="overview">Overview</button>
+      <button class="tab-button" data-section="profile">Profile</button>
+      <button class="tab-button" data-section="assessments">Assessments</button>
+      <button class="tab-button" data-section="blueprint">Blueprint</button>
+      <button class="tab-button" data-section="execution">Execution</button>
+    </nav>
+
+    <main>
+      <section id="section-overview" class="panel is-visible">
+        <h2>System Overview</h2>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Assessment Attempt</h3>
+            <p id="attempt-id">Not started</p>
+          </article>
+          <article class="card">
+            <h3>Blueprint</h3>
+            <p id="blueprint-id">Not generated</p>
+          </article>
+          <article class="card">
+            <h3>Store Backend</h3>
+            <p id="store-backend">Unknown</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="section-profile" class="panel" hidden>
+        <h2>Profile Ingestion</h2>
+        <div class="actions">
+          <button id="btn-parse-resume">Parse Demo Resume</button>
+          <button id="btn-confirm-resume">Confirm Resume Item</button>
+        </div>
+        <label class="field">
+          Taxonomy role search
+          <div class="inline-inputs">
+            <input id="input-role-query" type="text" value="software" />
+            <button id="btn-search-roles">Search Roles</button>
+          </div>
+        </label>
+      </section>
+
+      <section id="section-assessments" class="panel" hidden>
+        <h2>Assessments</h2>
+        <div class="actions">
+          <button id="btn-start-assessment">Start Assessment</button>
+          <button id="btn-send-events">Send Demo Events</button>
+          <button id="btn-complete-assessment">Complete Assessment</button>
+        </div>
+      </section>
+
+      <section id="section-blueprint" class="panel" hidden>
+        <h2>Blueprint</h2>
+        <label class="field">
+          Region
+          <input id="input-region" type="text" value="US-NYC" />
+        </label>
+        <div class="checkbox-row">
+          <label><input type="checkbox" class="scenario" value="safe" checked /> Safe</label>
+          <label><input type="checkbox" class="scenario" value="aggressive" checked /> Aggressive</label>
+          <label><input type="checkbox" class="scenario" value="pivot" /> Pivot</label>
+        </div>
+        <div class="actions">
+          <button id="btn-generate-blueprint">Generate Blueprint</button>
+          <button id="btn-fetch-blueprint">Fetch Blueprint JSON</button>
+          <button id="btn-download-pdf">Open Blueprint PDF</button>
+        </div>
+      </section>
+
+      <section id="section-execution" class="panel" hidden>
+        <h2>Execution Check-in</h2>
+        <div class="checkin-grid">
+          <label class="field">
+            Week Index
+            <input id="input-week-index" type="number" min="1" value="1" />
+          </label>
+          <label class="field">
+            Time Spent (min)
+            <input id="input-time-spent" type="number" min="0" value="90" />
+          </label>
+          <label class="field">
+            Energy (1-10)
+            <input id="input-energy" type="number" min="1" max="10" value="5" />
+          </label>
+        </div>
+        <label class="field">
+          Blockers (comma separated)
+          <input id="input-blockers" type="text" value="No uninterrupted time" />
+        </label>
+        <div class="actions">
+          <button id="btn-submit-checkin">Submit Check-in</button>
+        </div>
+      </section>
+
+      <section class="panel log-panel is-visible" id="section-log">
+        <h2>Activity Log</h2>
+        <pre id="log-output">Initializing interface...</pre>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+</html>

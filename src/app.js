@@ -1,5 +1,8 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { buildBlueprint } from './blueprint.js';
 import { createMinimalPdf } from './pdf.js';
@@ -14,6 +17,14 @@ const ROLE_CATALOG = [
   { id: '2512.1', name: 'Software developers', taxonomy: 'ESCO', version: '1.2.0' },
   { id: 'data_scientist', name: 'Data Scientist', taxonomy: 'ESCO', version: '1.2.0' }
 ];
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WEB_ROOT = path.resolve(__dirname, '..', 'web');
+const STATIC_MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8'
+};
 
 function httpError(statusCode, message) {
   const error = new Error(message);
@@ -33,6 +44,14 @@ function sendJson(res, statusCode, payload) {
 function sendNoContent(res) {
   res.writeHead(204);
   res.end();
+}
+
+function sendBinary(res, statusCode, payload, contentType) {
+  res.writeHead(statusCode, {
+    'Content-Type': contentType,
+    'Content-Length': payload.length
+  });
+  res.end(payload);
 }
 
 async function readBody(req) {
@@ -113,6 +132,29 @@ async function selectMissionsForCheckin(store) {
   ];
 }
 
+async function serveStaticFile(pathname, res) {
+  const target = pathname === '/' ? '/index.html' : pathname;
+  if (target !== '/index.html' && !target.startsWith('/assets/')) {
+    return false;
+  }
+
+  const decodedPath = decodeURIComponent(target);
+  const absolutePath = path.resolve(WEB_ROOT, `.${decodedPath}`);
+  if (!absolutePath.startsWith(WEB_ROOT + path.sep) && absolutePath !== path.join(WEB_ROOT, 'index.html')) {
+    return false;
+  }
+
+  try {
+    const extension = path.extname(absolutePath);
+    const contentType = STATIC_MIME[extension] ?? 'application/octet-stream';
+    const payload = await readFile(absolutePath);
+    sendBinary(res, 200, payload, contentType);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function createApp(options = {}) {
   const store = options.store ?? createMemoryStore();
   const now = options.now ?? (() => new Date().toISOString());
@@ -124,10 +166,12 @@ export function createApp(options = {}) {
 
     try {
       if (method === 'GET' && pathname === '/health') {
+        const dbReady = typeof store.ping === 'function' ? await store.ping() : true;
         sendJson(res, 200, {
           status: 'ok',
           service: 'career-intel-os-api',
-          store_backend: store.backend ?? 'memory'
+          store_backend: store.backend ?? 'memory',
+          db_ready: dbReady
         });
         return;
       }
@@ -379,6 +423,13 @@ export function createApp(options = {}) {
           next_missions: nextMissions
         });
         return;
+      }
+
+      if (method === 'GET') {
+        const wasServed = await serveStaticFile(pathname, res);
+        if (wasServed) {
+          return;
+        }
       }
 
       throw httpError(404, 'Route not found.');
