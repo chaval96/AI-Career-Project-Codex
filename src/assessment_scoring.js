@@ -1,20 +1,82 @@
-export function scoreAssessmentEvents(events) {
-  const eventCount = events.length;
-  const overall = Math.min(1, 0.35 + eventCount * 0.03);
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function mean(numbers, fallback = 0.5) {
+  if (!Array.isArray(numbers) || numbers.length === 0) {
+    return fallback;
+  }
+  const total = numbers.reduce((sum, value) => sum + value, 0);
+  return total / numbers.length;
+}
+
+function ratingToScore(value) {
+  if (typeof value !== 'number') {
+    return null;
+  }
+  return clamp(value / 5, 0, 1);
+}
+
+function pickDimensionScores(events) {
+  const reasoning = [];
+  const execution = [];
+  const communication = [];
+
+  for (const event of events) {
+    const payload = event?.data;
+    if (!payload || typeof payload !== 'object') {
+      continue;
+    }
+
+    const score = ratingToScore(payload.rating);
+    if (score === null) {
+      continue;
+    }
+
+    const dimension = typeof payload.dimension === 'string' ? payload.dimension : '';
+    if (dimension === 'reasoning') {
+      reasoning.push(score);
+    } else if (dimension === 'execution') {
+      execution.push(score);
+    } else if (dimension === 'communication') {
+      communication.push(score);
+    }
+  }
 
   return {
-    overall: Number(overall.toFixed(2)),
+    reasoning: mean(reasoning),
+    execution: mean(execution),
+    communication: mean(communication)
+  };
+}
+
+export function scoreAssessmentEvents(events) {
+  const eventCount = events.length;
+  const dimScores = pickDimensionScores(events);
+  const fallbackOverall = clamp(0.35 + eventCount * 0.03, 0.35, 0.92);
+  const measuredOverall = mean([dimScores.reasoning, dimScores.execution, dimScores.communication], fallbackOverall);
+
+  const overall = Number(measuredOverall.toFixed(2));
+  return {
+    overall,
     subscores: {
-      reasoning: Number(Math.min(1, overall * 0.95).toFixed(2)),
-      debugging: Number(Math.min(1, overall * 1.02).toFixed(2)),
-      communication: Number(Math.max(0.2, overall * 0.88).toFixed(2))
+      reasoning: Number(dimScores.reasoning.toFixed(2)),
+      debugging: Number(dimScores.execution.toFixed(2)),
+      communication: Number(dimScores.communication.toFixed(2))
     }
   };
 }
 
 export function buildAssessmentResultFromAttempt(attempt) {
   const scores = scoreAssessmentEvents(attempt.events ?? []);
-  const reliability = Number(Math.min(1, 0.6 + (attempt.events ?? []).length * 0.02).toFixed(2));
+  const reliability = Number(
+    Math.min(
+      1,
+      0.55
+      + (attempt.events ?? []).length * 0.03
+      + (scores.overall >= 0.7 ? 0.08 : 0)
+    ).toFixed(2)
+  );
 
   return {
     attempt_id: attempt.attempt_id,

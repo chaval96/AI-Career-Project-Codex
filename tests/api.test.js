@@ -263,6 +263,20 @@ test('upload route and API satisfy T-1004 requirements', async () => {
     assert.equal(Array.isArray(validUploadPayload.extracted_items), true);
     assert.equal(validUploadPayload.extracted_items.length > 0, true);
 
+    const multipartBody = new FormData();
+    multipartBody.append(
+      'pasted_history',
+      'Orbit Labs | Product Analyst | Jan 2022 - Present | Increased conversion by 12%'
+    );
+    const multipartUploadResponse = await fetch(`${baseUrl}/v1/onboarding/upload`, {
+      method: 'POST',
+      body: multipartBody
+    });
+    assert.equal(multipartUploadResponse.status, 200);
+    const multipartPayload = await multipartUploadResponse.json();
+    assert.equal(Array.isArray(multipartPayload.extracted_items), true);
+    assert.equal(multipartPayload.extracted_items[0].org, 'Orbit Labs');
+
     const onboardingStateResponse = await fetch(`${baseUrl}/v1/onboarding/state`);
     const onboardingState = await onboardingStateResponse.json();
     assert.equal(onboardingState.completed_steps.includes('upload'), true);

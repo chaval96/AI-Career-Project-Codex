@@ -5,12 +5,14 @@ import { OnboardingScaffold } from '../../components/OnboardingScaffold';
 import { api } from '../../lib/api';
 
 const goalTypes = [
-  { value: 'promotion', label: 'Promotion' },
-  { value: 'switch_role', label: 'Switch role' },
-  { value: 'switch_industry', label: 'Switch industry' },
-  { value: 'freelancing', label: 'Start freelancing' },
-  { value: 'relocate', label: 'Relocate' }
+  { value: 'promotion', label: 'Grow in my current track', hint: 'Move to the next level in your current field.' },
+  { value: 'switch_role', label: 'Switch to a new role', hint: 'Transition into a different role family.' },
+  { value: 'switch_industry', label: 'Switch industry', hint: 'Carry your strengths into a new sector.' },
+  { value: 'freelancing', label: 'Start freelancing', hint: 'Build an independent client-based path.' },
+  { value: 'relocate', label: 'Relocate for better opportunities', hint: 'Plan location-driven career moves.' }
 ];
+
+const regionSuggestions = ['US-NYC', 'US-SF', 'US-AUS', 'US-SEA', 'US-REMOTE', 'EU-BER', 'UK-LON', 'TR-IST'];
 
 export function GoalsPage() {
   const navigate = useNavigate();
@@ -37,8 +39,13 @@ export function GoalsPage() {
     if (timePerWeek <= 0) {
       return 'Time/week must be greater than 0.';
     }
+    if (salaryFloor && Number.isNaN(Number(salaryFloor))) {
+      return 'Salary floor must be a valid number.';
+    }
     return null;
-  }, [goalType, location, timeHorizonMonths, timePerWeek]);
+  }, [goalType, location, salaryFloor, timeHorizonMonths, timePerWeek]);
+
+  const selectedGoal = goalTypes.find((goal) => goal.value === goalType);
 
   async function onContinue() {
     if (validationError) {
@@ -77,9 +84,12 @@ export function GoalsPage() {
         </button>
       }
     >
+      <p className="text-sm text-slate-600">
+        Keep this practical. Think about your real weekly bandwidth and minimum salary expectations.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-semibold text-ink">
-          Goal type
+          Primary goal
           <select
             className="mt-1 w-full rounded-xl border border-line px-3 py-2"
             value={goalType}
@@ -91,6 +101,7 @@ export function GoalsPage() {
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs font-normal text-slate-500">{selectedGoal?.hint}</span>
         </label>
 
         <label className="text-sm font-semibold text-ink">
@@ -108,35 +119,50 @@ export function GoalsPage() {
 
         <label className="text-sm font-semibold text-ink">
           Time per week (hours)
-          <input
-            className="mt-1 w-full rounded-xl border border-line px-3 py-2"
-            type="number"
-            min={1}
-            value={timePerWeek}
-            onChange={(e) => setTimePerWeek(Number(e.target.value))}
-          />
+          <div className="mt-2 rounded-xl border border-line px-3 py-3">
+            <input
+              className="w-full"
+              type="range"
+              min={1}
+              max={25}
+              step={1}
+              value={timePerWeek}
+              onChange={(e) => setTimePerWeek(Number(e.target.value))}
+            />
+            <div className="mt-2 flex items-center justify-between text-xs font-normal text-slate-500">
+              <span>1h/week</span>
+              <span className="font-semibold text-ink">{timePerWeek}h/week</span>
+              <span>25h/week</span>
+            </div>
+          </div>
         </label>
 
         <label className="text-sm font-semibold text-ink">
-          Salary floor (optional)
+          Salary floor (optional, annual)
           <input
             className="mt-1 w-full rounded-xl border border-line px-3 py-2"
             type="number"
             min={0}
             value={salaryFloor}
             onChange={(e) => setSalaryFloor(e.target.value)}
-            placeholder="120000"
+            placeholder="e.g. 85000"
           />
         </label>
 
         <label className="text-sm font-semibold text-ink sm:col-span-2">
-          Region
+          Preferred region
           <input
+            list="region-suggestions"
             className="mt-1 w-full rounded-xl border border-line px-3 py-2"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="US-NYC"
+            placeholder="e.g. US-NYC, US-REMOTE, TR-IST"
           />
+          <datalist id="region-suggestions">
+            {regionSuggestions.map((region) => (
+              <option key={region} value={region} />
+            ))}
+          </datalist>
         </label>
 
         <label className="flex items-center gap-2 text-sm font-semibold text-ink">

@@ -12,12 +12,37 @@ type Sliders = {
   hands_on_vs_strategic: number;
 };
 
-const labels: Record<keyof Sliders, string> = {
-  autonomy_vs_structure: 'Autonomy vs structure',
-  stability_vs_growth: 'Stability vs growth',
-  income_vs_impact: 'Income vs impact',
-  team_vs_solo: 'Team vs solo',
-  hands_on_vs_strategic: 'Hands-on vs strategic'
+const preferenceMeta: Record<keyof Sliders, { label: string; minLabel: string; maxLabel: string; hint: string }> = {
+  autonomy_vs_structure: {
+    label: 'Autonomy vs structure',
+    minLabel: 'Structured',
+    maxLabel: 'Autonomous',
+    hint: 'How much ownership vs process guidance helps you perform best?'
+  },
+  stability_vs_growth: {
+    label: 'Stability vs growth',
+    minLabel: 'Stable',
+    maxLabel: 'Fast growth',
+    hint: 'Do you prefer predictable environments or high-change upside?'
+  },
+  income_vs_impact: {
+    label: 'Income vs impact',
+    minLabel: 'Impact-first',
+    maxLabel: 'Income-first',
+    hint: 'Which trade-off matters more in your next 12 months?'
+  },
+  team_vs_solo: {
+    label: 'Team vs solo',
+    minLabel: 'Solo-heavy',
+    maxLabel: 'Team-heavy',
+    hint: 'Where do you naturally deliver stronger outcomes?'
+  },
+  hands_on_vs_strategic: {
+    label: 'Hands-on vs strategic',
+    minLabel: 'Hands-on builder',
+    maxLabel: 'Strategic planner',
+    hint: 'Which work mode should your plan prioritize?'
+  }
 };
 
 const defaults: Sliders = {
@@ -58,10 +83,12 @@ export function QuickPreferencesPage() {
         </button>
       }
     >
+      <p className="text-sm text-slate-600">Move each slider to reflect your natural preference, not what sounds ideal.</p>
       <div className="grid gap-3">
         {(Object.keys(values) as Array<keyof Sliders>).map((key) => (
           <label key={key} className="rounded-xl border border-line p-3 text-sm font-semibold text-ink">
-            <span className="block">{labels[key]}</span>
+            <span className="block">{preferenceMeta[key].label}</span>
+            <span className="mt-1 block text-xs font-normal text-slate-500">{preferenceMeta[key].hint}</span>
             <input
               className="mt-2 w-full"
               type="range"
@@ -73,7 +100,9 @@ export function QuickPreferencesPage() {
                 setValues((prev) => ({ ...prev, [key]: next }));
               }}
             />
-            <span className="text-xs text-slate-500">Value: {values[key]}</span>
+            <span className="mt-1 block text-xs text-slate-500">
+              {preferenceMeta[key].minLabel} - <strong>{values[key]}</strong> - {preferenceMeta[key].maxLabel}
+            </span>
           </label>
         ))}
       </div>

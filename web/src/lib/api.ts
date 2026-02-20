@@ -1,12 +1,15 @@
 import type { OnboardingState } from './onboarding';
 
 async function requestJson<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers ?? {});
+  const isFormDataBody = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (!isFormDataBody && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {})
-    }
+    headers
   });
 
   const text = await response.text();
@@ -36,10 +39,11 @@ export const api = {
       body: JSON.stringify(body)
     }
   ),
-  saveUpload: (body: Record<string, unknown>) => requestJson<Record<string, unknown>>('/v1/onboarding/upload', {
-    method: 'POST',
-    body: JSON.stringify(body)
-  }),
+  saveUpload: (body: FormData | Record<string, unknown>) =>
+    requestJson<Record<string, unknown>>('/v1/onboarding/upload', {
+      method: 'POST',
+      body: body instanceof FormData ? body : JSON.stringify(body)
+    }),
   confirmResume: (body: { resume_items: Array<Record<string, unknown>> }) =>
     requestJson<{ saved_count: number }>('/v1/onboarding/confirm', {
       method: 'POST',

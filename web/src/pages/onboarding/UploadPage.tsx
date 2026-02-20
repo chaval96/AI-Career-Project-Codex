@@ -1,32 +1,89 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { OnboardingScaffold } from '../../components/OnboardingScaffold';
 import { api } from '../../lib/api';
 
+const SUPPORTED_RESUME_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'txt']);
+
+function extensionForFileName(fileName: string): string {
+  const parts = fileName.toLowerCase().split('.');
+  return parts.length > 1 ? parts.pop() ?? '' : '';
+}
+
+function normalizeUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!parsed.hostname.includes('.')) {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function UploadPage() {
   const navigate = useNavigate();
-  const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [pastedHistory, setPastedHistory] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  function onFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0] ?? null;
+    setFile(selected);
+    setNote(null);
+  }
 
   async function onContinue() {
-    if (!fileName.trim() && !linkedinUrl.trim() && !pastedHistory.trim()) {
+    if (!file && !linkedinUrl.trim() && !pastedHistory.trim()) {
       setError('Provide at least one input method (upload, linkedin, or pasted history).');
+      return;
+    }
+
+    if (file) {
+      const ext = extensionForFileName(file.name);
+      if (!SUPPORTED_RESUME_EXTENSIONS.has(ext)) {
+        setError('Upload a PDF, DOC, DOCX, or TXT file.');
+        return;
+      }
+    }
+
+    const normalizedLinkedin = normalizeUrl(linkedinUrl);
+    if (linkedinUrl.trim() && !normalizedLinkedin && !file && !pastedHistory.trim()) {
+      setError('Enter a valid LinkedIn URL, upload a file, or paste your work history.');
       return;
     }
 
     setSaving(true);
     setError(null);
+    setNote(null);
     try {
-      const result = await api.saveUpload({
-        file_name: fileName.trim() || undefined,
-        linkedin_url: linkedinUrl.trim() || undefined,
-        pasted_history: pastedHistory.trim() || undefined
-      });
+      const form = new FormData();
+      if (file) {
+        form.append('file', file, file.name);
+      }
+      if (normalizedLinkedin) {
+        form.append('linkedin_url', normalizedLinkedin);
+      }
+      if (pastedHistory.trim()) {
+        form.append('pasted_history', pastedHistory.trim());
+      }
+
+      const result = await api.saveUpload(form);
       sessionStorage.setItem('parsed_resume_result', JSON.stringify(result));
+      if (linkedinUrl.trim() && !normalizedLinkedin) {
+        setNote('LinkedIn URL was ignored because it was not a valid URL.');
+      }
       navigate('/onboarding/confirm');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not parse upload.');
@@ -48,13 +105,16 @@ export function UploadPage() {
     >
       <div className="grid gap-4">
         <label className="text-sm font-semibold text-ink">
-          Upload CV file name (PDF/DOCX)
+          Upload CV (PDF/DOC/DOCX/TXT)
           <input
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
             className="mt-1 w-full rounded-xl border border-line px-3 py-2"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            placeholder="resume.pdf"
+            onChange={onFileChange}
           />
+          <p className="mt-1 text-xs font-normal text-slate-500">
+            {file ? `Selected: ${file.name}` : 'Optional if you prefer LinkedIn URL or pasted history.'}
+          </p>
         </label>
 
         <label className="text-sm font-semibold text-ink">
@@ -77,6 +137,8 @@ export function UploadPage() {
           />
         </label>
       </div>
+
+      {note ? <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{note}</div> : null}
 
       {error ? (
         <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-700">

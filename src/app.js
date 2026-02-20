@@ -248,35 +248,344 @@ function isNonEmptyStringArray(value) {
   return Array.isArray(value) && value.every((item) => hasNonEmptyString(item));
 }
 
-function buildResumeParseResult() {
-  const extractedItems = enrichResumeWithTaxonomy([
-    {
-      org: 'Example Org',
-      role_title: 'Software Engineer',
-      start_date: '2022-01-01',
-      end_date: null,
-      location: 'US-NYC',
-      industry: 'Technology',
-      level: 'mid',
-      achievements: ['Delivered product features with measurable impact'],
-      tools: ['Node.js', 'PostgreSQL'],
-      self_claimed_skills: ['API Design', 'Testing']
+function normalizeOptionalUrl(value) {
+  if (!hasNonEmptyString(value)) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!parsed.hostname || !parsed.hostname.includes('.')) {
+      return null;
     }
-  ]);
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function parseMultipartBody(rawBody, contentType) {
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) {
+    return { fields: {}, files: [] };
+  }
+
+  const boundary = boundaryMatch[1] ?? boundaryMatch[2];
+  const separator = `--${boundary}`;
+  const chunks = rawBody.toString('latin1').split(separator).slice(1, -1);
+  const fields = {};
+  const files = [];
+
+  for (const rawChunk of chunks) {
+    const chunk = rawChunk.replace(/^\r?\n/, '').replace(/\r?\n$/, '');
+    if (!chunk || chunk === '--') {
+      continue;
+    }
+
+    let headerSplitIndex = chunk.indexOf('\r\n\r\n');
+    let separatorLength = 4;
+    if (headerSplitIndex < 0) {
+      headerSplitIndex = chunk.indexOf('\n\n');
+      separatorLength = 2;
+    }
+    if (headerSplitIndex < 0) {
+      continue;
+    }
+
+    const rawHeaders = chunk.slice(0, headerSplitIndex);
+    const rawValue = chunk.slice(headerSplitIndex + separatorLength).replace(/\r?\n$/, '');
+    const headerMap = {};
+    for (const line of rawHeaders.split(/\r?\n/)) {
+      const separatorIndex = line.indexOf(':');
+      if (separatorIndex <= 0) {
+        continue;
+      }
+      const name = line.slice(0, separatorIndex).trim().toLowerCase();
+      const value = line.slice(separatorIndex + 1).trim();
+      headerMap[name] = value;
+    }
+
+    const disposition = headerMap['content-disposition'];
+    if (!disposition) {
+      continue;
+    }
+    const fieldNameMatch = disposition.match(/name="([^"]+)"/i);
+    if (!fieldNameMatch) {
+      continue;
+    }
+    const fieldName = fieldNameMatch[1];
+    const fileNameMatch = disposition.match(/filename="([^"]*)"/i);
+
+    if (fileNameMatch && fileNameMatch[1]) {
+      const mimeType = headerMap['content-type'] ?? 'application/octet-stream';
+      const bytePayload = Buffer.from(rawValue, 'latin1');
+      files.push({
+        field_name: fieldName,
+        file_name: fileNameMatch[1],
+        mime_type: mimeType,
+        size_bytes: bytePayload.length,
+        text_content: mimeType.startsWith('text/') ? bytePayload.toString('utf8') : ''
+      });
+      continue;
+    }
+
+    fields[fieldName] = Buffer.from(rawValue, 'latin1').toString('utf8').trim();
+  }
+
+  return { fields, files };
+}
+
+function monthNumber(name) {
+  const key = name.toLowerCase().slice(0, 3);
+  const map = {
+    jan: '01',
+    feb: '02',
+    mar: '03',
+    apr: '04',
+    may: '05',
+    jun: '06',
+    jul: '07',
+    aug: '08',
+    sep: '09',
+    oct: '10',
+    nov: '11',
+    dec: '12'
+  };
+  return map[key] ?? null;
+}
+
+function parseDateToken(token) {
+  if (!hasNonEmptyString(token)) {
+    return null;
+  }
+  const clean = token.trim().replace(/\./g, '');
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    return clean;
+  }
+
+  const yearMonth = clean.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (yearMonth) {
+    const year = yearMonth[1];
+    const month = String(Number(yearMonth[2])).padStart(2, '0');
+    return `${year}-${month}-01`;
+  }
+
+  const monthYear = clean.match(/^([A-Za-z]{3,9})\s+(\d{4})$/);
+  if (monthYear) {
+    const month = monthNumber(monthYear[1]);
+    if (!month) {
+      return null;
+    }
+    return `${monthYear[2]}-${month}-01`;
+  }
+
+  if (/^\d{4}$/.test(clean)) {
+    return `${clean}-01-01`;
+  }
+
+  return null;
+}
+
+function parseDateRange(value) {
+  if (!hasNonEmptyString(value)) {
+    return { start_date: null, end_date: null };
+  }
+  const compact = value
+    .replace(/[–—]/g, '-')
+    .replace(/\bto\b/gi, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const [startRaw, endRaw] = compact.split(/\s*-\s*/, 2);
+  const start = parseDateToken(startRaw);
+  if (!endRaw) {
+    return { start_date: start, end_date: null };
+  }
+  if (/present|current|now/i.test(endRaw)) {
+    return { start_date: start, end_date: null };
+  }
+
+  return { start_date: start, end_date: parseDateToken(endRaw) };
+}
+
+function parseDelimitedValues(value) {
+  if (!hasNonEmptyString(value)) {
+    return [];
+  }
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function detectSkillSignals(sourceText) {
+  const text = sourceText.toLowerCase();
+  const signalCatalog = [
+    { pattern: /\bjavascript|typescript|node|react|frontend|backend\b/, tool: 'JavaScript', skill: 'Web Development' },
+    { pattern: /\bpython|pandas|numpy|ml|machine learning|data\b/, tool: 'Python', skill: 'Data Analysis' },
+    { pattern: /\bsql|postgres|mysql|database\b/, tool: 'SQL', skill: 'Data Modeling' },
+    { pattern: /\baws|gcp|azure|cloud\b/, tool: 'Cloud', skill: 'Cloud Architecture' },
+    { pattern: /\bexcel|sheets|tableau|power bi\b/, tool: 'Analytics Tools', skill: 'Business Analytics' },
+    { pattern: /\bfigma|ux|ui|design\b/, tool: 'Figma', skill: 'UX Design' },
+    { pattern: /\bgit|github|testing|ci\/cd|deployment\b/, tool: 'Git', skill: 'Delivery Quality' },
+    { pattern: /\bsales|crm|account|pipeline\b/, tool: 'CRM', skill: 'Client Management' }
+  ];
+
+  const tools = [];
+  const skills = [];
+  for (const signal of signalCatalog) {
+    if (signal.pattern.test(text)) {
+      tools.push(signal.tool);
+      skills.push(signal.skill);
+    }
+  }
 
   return {
-    extracted_items: extractedItems,
-    mapping_notes: ['Initial extraction uses deterministic parser heuristics in scaffold mode.']
+    tools: [...new Set(tools)].slice(0, 5),
+    skills: [...new Set(skills)].slice(0, 6)
   };
 }
 
-function parseMultipartTextField(rawText, fieldName) {
-  const pattern = new RegExp(`name="${fieldName}"\\r?\\n\\r?\\n([\\s\\S]*?)\\r?\\n--`, 'i');
-  const match = rawText.match(pattern);
-  if (!match) {
-    return '';
+function parseHistoryLine(line, fallbackLocation) {
+  const pipeParts = line.split('|').map((item) => item.trim()).filter(Boolean);
+  if (pipeParts.length >= 2) {
+    const [org, role_title, dates = '', ...achievementParts] = pipeParts;
+    const range = parseDateRange(dates);
+    const achievement = achievementParts.join(' | ').trim();
+    const skillSignals = detectSkillSignals([line, achievement].filter(Boolean).join(' '));
+    return {
+      org,
+      role_title,
+      start_date: range.start_date ?? '2023-01-01',
+      end_date: range.end_date,
+      location: fallbackLocation ?? '',
+      level: '',
+      achievements: achievement ? [achievement] : [],
+      tools: skillSignals.tools,
+      self_claimed_skills: skillSignals.skills
+    };
   }
-  return match[1].trim();
+
+  const atPattern = line.match(/^(.+?)\s+at\s+(.+?)\s*\(([^)]+)\)\s*(.*)$/i);
+  if (atPattern) {
+    const [, role, org, dates, tail] = atPattern;
+    const range = parseDateRange(dates);
+    const achievement = tail.trim();
+    const skillSignals = detectSkillSignals([line, achievement].filter(Boolean).join(' '));
+    return {
+      org: org.trim(),
+      role_title: role.trim(),
+      start_date: range.start_date ?? '2023-01-01',
+      end_date: range.end_date,
+      location: fallbackLocation ?? '',
+      level: '',
+      achievements: achievement ? [achievement] : [],
+      tools: skillSignals.tools,
+      self_claimed_skills: skillSignals.skills
+    };
+  }
+
+  return null;
+}
+
+function inferGoalRole(goalType) {
+  const map = {
+    promotion: 'Current role contributor',
+    switch_role: 'Transition candidate',
+    switch_industry: 'Cross-industry candidate',
+    freelancing: 'Freelance operator',
+    relocate: 'Relocation candidate'
+  };
+  return map[goalType] ?? 'Career candidate';
+}
+
+function buildFallbackResumeItem({ fileName, linkedinUrl, goals }) {
+  const now = new Date();
+  const startYear = String(Math.max(now.getUTCFullYear() - 2, 2018));
+  const profileSlug = linkedinUrl?.match(/linkedin\.com\/in\/([^/?#]+)/i)?.[1];
+  const profileName = profileSlug
+    ? profileSlug
+        .split('-')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : null;
+
+  const evidenceSource = [fileName, linkedinUrl].filter(Boolean).join(' ');
+  const signals = detectSkillSignals(evidenceSource);
+
+  return {
+    org: profileName ? `${profileName} profile` : 'Uploaded resume',
+    role_title: inferGoalRole(goals?.goal_type),
+    start_date: `${startYear}-01-01`,
+    end_date: null,
+    location: goals?.location ?? 'US',
+    industry: null,
+    level: null,
+    achievements: ['Added baseline profile details during onboarding'],
+    tools: signals.tools,
+    self_claimed_skills: signals.skills
+  };
+}
+
+function buildResumeParseResult({ fileName, linkedinUrl, pastedHistory, goals } = {}) {
+  const notes = [];
+  const items = [];
+  const fallbackLocation = goals?.location ?? 'US';
+
+  if (hasNonEmptyString(pastedHistory)) {
+    const lines = pastedHistory
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      if (line.startsWith('-') && items.length > 0) {
+        items[items.length - 1].achievements.push(line.slice(1).trim());
+        continue;
+      }
+
+      const parsed = parseHistoryLine(line, fallbackLocation);
+      if (parsed) {
+        items.push(parsed);
+      }
+    }
+
+    if (items.length > 0) {
+      notes.push(`Parsed ${items.length} timeline row(s) from pasted history.`);
+    } else {
+      notes.push('Could not fully structure pasted history. Added a fallback row to edit manually.');
+    }
+  }
+
+  if (items.length === 0 && hasNonEmptyString(linkedinUrl)) {
+    notes.push('LinkedIn URL detected. Added baseline profile row.');
+  }
+
+  if (items.length === 0) {
+    items.push(buildFallbackResumeItem({ fileName, linkedinUrl, goals }));
+  }
+
+  if (hasNonEmptyString(fileName)) {
+    notes.push(`File attached: ${fileName}.`);
+  }
+
+  const enriched = enrichResumeWithTaxonomy(
+    items.map((item) => ({
+      ...item,
+      achievements: Array.isArray(item.achievements) ? item.achievements.slice(0, 5) : [],
+      tools: Array.isArray(item.tools) ? item.tools.slice(0, 5) : [],
+      self_claimed_skills: Array.isArray(item.self_claimed_skills) ? item.self_claimed_skills.slice(0, 8) : []
+    }))
+  );
+
+  notes.push('Review each row before confirmation. Your edits become source of truth.');
+
+  return {
+    extracted_items: enriched,
+    mapping_notes: notes
+  };
 }
 
 function deriveFirstTestRecommendation(goals, quickPreferences) {
@@ -882,32 +1191,50 @@ export function createApp(options = {}) {
           throw httpError(400, 'Complete goals step first before uploading experience.');
         }
 
-        const contentType = (req.headers['content-type'] ?? '').toLowerCase();
+        const contentTypeHeader = String(req.headers['content-type'] ?? '');
+        const contentType = contentTypeHeader.toLowerCase();
         let hasFile = false;
         let hasLinkedin = false;
         let hasPastedHistory = false;
+        let fileName = null;
+        let linkedinUrl = null;
+        let pastedHistory = null;
 
         if (contentType.includes('application/json')) {
           const body = await parseJsonBody(req, true);
-          hasFile = hasNonEmptyString(body.file_name);
-          hasLinkedin = hasNonEmptyString(body.linkedin_url);
-          hasPastedHistory = hasNonEmptyString(body.pasted_history);
+          fileName = hasNonEmptyString(body.file_name) ? body.file_name.trim() : null;
+          linkedinUrl = hasNonEmptyString(body.linkedin_url) ? body.linkedin_url.trim() : null;
+          pastedHistory = hasNonEmptyString(body.pasted_history) ? body.pasted_history.trim() : null;
         } else {
           const raw = await readBody(req);
           if (raw.length === 0) {
             throw httpError(400, 'Upload payload is required.');
           }
-          const rawText = raw.toString('utf8');
-          hasFile = /filename=\"[^\"]+\"/i.test(rawText);
-          hasLinkedin = parseMultipartTextField(rawText, 'linkedin_url').length > 0;
-          hasPastedHistory = parseMultipartTextField(rawText, 'pasted_history').length > 0;
+
+          const parsed = parseMultipartBody(raw, contentTypeHeader);
+          const parsedFile = parsed.files.find((entry) => entry.field_name === 'file') ?? parsed.files[0] ?? null;
+          fileName = hasNonEmptyString(parsedFile?.file_name) ? parsedFile.file_name.trim() : null;
+          linkedinUrl = hasNonEmptyString(parsed.fields.linkedin_url) ? parsed.fields.linkedin_url : null;
+          pastedHistory = hasNonEmptyString(parsed.fields.pasted_history)
+            ? parsed.fields.pasted_history
+            : hasNonEmptyString(parsedFile?.text_content)
+              ? parsedFile.text_content
+              : null;
         }
+
+        const normalizedLinkedinUrl = normalizeOptionalUrl(linkedinUrl);
+        hasFile = hasNonEmptyString(fileName);
+        hasLinkedin = hasNonEmptyString(normalizedLinkedinUrl);
+        hasPastedHistory = hasNonEmptyString(pastedHistory);
 
         if (!hasFile && !hasLinkedin && !hasPastedHistory) {
           throw httpError(
             400,
             'Provide at least one input method: file, linkedin_url, or pasted_history.'
           );
+        }
+        if (hasNonEmptyString(linkedinUrl) && !normalizedLinkedinUrl && !hasFile && !hasPastedHistory) {
+          throw httpError(400, 'linkedin_url must be a valid URL.');
         }
 
         if (typeof store.saveOnboardingUpload === 'function') {
@@ -919,7 +1246,16 @@ export function createApp(options = {}) {
           });
         }
 
-        sendJson(res, 200, buildResumeParseResult());
+        sendJson(
+          res,
+          200,
+          buildResumeParseResult({
+            fileName,
+            linkedinUrl: normalizedLinkedinUrl,
+            pastedHistory,
+            goals
+          })
+        );
         return;
       }
 
