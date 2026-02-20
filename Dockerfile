@@ -2,9 +2,13 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# Copy root manifest + lock file, and web workspace manifest.
+# The root package-lock.json covers all workspace deps so no
+# separate web/package-lock.json is needed.
 COPY package.json package-lock.json ./
-COPY web/package.json web/package-lock.json ./web/
-RUN npm ci && npm --prefix web ci
+COPY web/package.json ./web/
+
+RUN npm ci
 
 COPY . .
 RUN npm --prefix web run build
