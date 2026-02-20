@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { routeForOnboardingStep, type OnboardingStep } from '../lib/onboarding';
@@ -5,7 +6,7 @@ import { useOnboardingState } from '../state/useOnboardingState';
 import { RetryBanner } from './RetryBanner';
 
 type GuardProps = {
-  children: JSX.Element;
+  children: ReactElement;
 };
 
 type OnboardingGuardProps = GuardProps & {

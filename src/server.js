@@ -1,5 +1,19 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { createApp } from './app.js';
 import { createMemoryStore } from './store.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WEB_DIST = path.resolve(__dirname, '..', 'web', 'dist');
+
+if (!existsSync(WEB_DIST)) {
+  process.stderr.write(
+    '[warn] web/dist not found – the frontend has not been built.\n' +
+    '[warn] Run "npm run build" first, or use "npm start" which builds automatically.\n'
+  );
+}
 
 const port = Number(process.env.PORT ?? 3000);
 const backend = (process.env.STORE_BACKEND ?? 'memory').toLowerCase();
