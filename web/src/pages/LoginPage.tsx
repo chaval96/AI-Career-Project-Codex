@@ -36,7 +36,11 @@ export function LoginPage() {
           Send magic link
         </button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">State: {state}</p>
+      {state === 'error' ? (
+        <p className="mt-3 text-sm text-rose-600">Please enter a valid email address.</p>
+      ) : state === 'sent' ? (
+        <p className="mt-3 text-sm text-sea">Magic link sent! Check your inbox.</p>
+      ) : null}
     </main>
   );
 }

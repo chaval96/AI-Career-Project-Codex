@@ -86,7 +86,18 @@ const STATIC_ROUTE_MAP = {
 const STATIC_MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8'
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.json': 'application/json; charset=utf-8'
 };
 const ROUTE_ALIASES = {
   '/consent': '/v1/onboarding/consent',
@@ -260,7 +271,7 @@ function buildResumeParseResult() {
 }
 
 function parseMultipartTextField(rawText, fieldName) {
-  const pattern = new RegExp(`name=\"${fieldName}\"\\\\r?\\\\n\\\\r?\\\\n([\\\\s\\\\S]*?)\\\\r?\\\\n--`, 'i');
+  const pattern = new RegExp(`name="${fieldName}"\\r?\\n\\r?\\n([\\s\\S]*?)\\r?\\n--`, 'i');
   const match = rawText.match(pattern);
   if (!match) {
     return '';
