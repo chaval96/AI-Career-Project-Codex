@@ -27,3 +27,6 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+      - name: Build frontend
+        run: npm run web:build
